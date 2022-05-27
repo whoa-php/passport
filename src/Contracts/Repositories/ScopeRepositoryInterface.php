@@ -31,7 +31,6 @@ interface ScopeRepositoryInterface
 {
     /**
      * @param Closure $closure
-     *
      * @return void
      */
     public function inTransaction(Closure $closure): void;
@@ -43,29 +42,42 @@ interface ScopeRepositoryInterface
 
     /**
      * @param ScopeInterface $scope
-     *
      * @return ScopeInterface
      */
     public function create(ScopeInterface $scope): ScopeInterface;
 
     /**
-     * @param string $identifier
-     *
-     * @return ScopeInterface
+     * @param ScopeInterface|string|int $index
+     * @return ScopeInterface|null
      */
-    public function read(string $identifier): ScopeInterface;
+    public function read($index): ?ScopeInterface;
 
     /**
      * @param ScopeInterface $scope
-     *
      * @return void
      */
     public function update(ScopeInterface $scope): void;
 
     /**
-     * @param string $identifier
-     *
+     * @param string|int $index
      * @return void
      */
-    public function delete(string $identifier): void;
+    public function delete($index);
+
+    /**
+     * @return string
+     */
+    public function getIdentifierKeyName(): string;
+
+    /**
+     * @param ScopeInterface|string|int $index
+     * @return int|null
+     */
+    public function queryIdentity($index): ?int;
+
+    /**
+     * @param ScopeInterface|string|int $index
+     * @return string|null
+     */
+    public function queryIdentifier($index): ?string;
 }

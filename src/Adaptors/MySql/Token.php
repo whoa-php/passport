@@ -26,7 +26,8 @@ namespace Whoa\Passport\Adaptors\MySql;
  */
 class Token extends \Whoa\Passport\Entities\Token
 {
-    use ArrayParserTrait, DbDateFormatTrait;
+    use ArrayParserTrait;
+    use DbDateFormatTrait;
 
     /**
      * Constructor.

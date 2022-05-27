@@ -34,7 +34,7 @@ interface PassportServerInterface extends AuthorizationServerInterface
      * Create response with an authorization code. Could be used for a final step in code authorization grant.
      *
      * @param TokenInterface $code
-     * @param string|null    $state
+     * @param string|null $state
      *
      * @return ResponseInterface
      *
@@ -46,7 +46,7 @@ interface PassportServerInterface extends AuthorizationServerInterface
      * Create response with a token. Could be used for a final step in implicit grant.
      *
      * @param TokenInterface $token
-     * @param string|null    $state
+     * @param string|null $state
      *
      * @return ResponseInterface
      *

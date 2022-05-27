@@ -29,6 +29,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionException;
 use ReflectionParameter;
+
 use function assert;
 
 /**
@@ -41,7 +42,7 @@ class PassportSettings implements PassportSettingsInterface
     /**
      * @var array
      */
-    private $appConfig;
+    private array $appConfig;
 
     /**
      * @inheritdoc
@@ -125,13 +126,13 @@ class PassportSettings implements PassportSettingsInterface
         assert(empty($userPk) === false, "Invalid User Primary Key Name `$userPk`.");
 
         return $defaults + [
-                static::KEY_APPROVAL_URI_STRING              => $approvalUri,
-                static::KEY_ERROR_URI_STRING                 => $errorUri,
-                static::KEY_DEFAULT_CLIENT_ID                => $defaultClientId,
-                static::KEY_USER_TABLE_NAME                  => $userTable,
-                static::KEY_USER_PRIMARY_KEY_NAME            => $userPk,
-                static::KEY_USER_CREDENTIALS_VALIDATOR       => $credentialsValidator,
-                static::KEY_USER_SCOPE_VALIDATOR             => $scopeValidator,
+                static::KEY_APPROVAL_URI_STRING => $approvalUri,
+                static::KEY_ERROR_URI_STRING => $errorUri,
+                static::KEY_DEFAULT_CLIENT_ID => $defaultClientId,
+                static::KEY_USER_TABLE_NAME => $userTable,
+                static::KEY_USER_PRIMARY_KEY_NAME => $userPk,
+                static::KEY_USER_CREDENTIALS_VALIDATOR => $credentialsValidator,
+                static::KEY_USER_SCOPE_VALIDATOR => $scopeValidator,
                 static::KEY_TOKEN_CUSTOM_PROPERTIES_PROVIDER => $customPropsProvider,
             ];
     }
@@ -144,17 +145,17 @@ class PassportSettings implements PassportSettingsInterface
         $appConfig = $this->getAppConfig();
 
         return [
-            static::KEY_IS_LOG_ENABLED                       => (bool)($appConfig[A::KEY_IS_LOG_ENABLED] ?? false),
-            static::KEY_CODE_EXPIRATION_TIME_IN_SECONDS      => 10 * 60,
-            static::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS     => 60 * 60,
+            static::KEY_IS_LOG_ENABLED => (bool)($appConfig[A::KEY_IS_LOG_ENABLED] ?? false),
+            static::KEY_CODE_EXPIRATION_TIME_IN_SECONDS => 10 * 60,
+            static::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS => 60 * 60,
             static::KEY_RENEW_REFRESH_VALUE_ON_TOKEN_REFRESH => true,
         ];
     }
 
     /**
-     * @return mixed
+     * @return array
      */
-    protected function getAppConfig()
+    protected function getAppConfig(): array
     {
         return $this->appConfig;
     }

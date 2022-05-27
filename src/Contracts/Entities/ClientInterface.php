@@ -30,8 +30,18 @@ use Ramsey\Uuid\UuidInterface;
 interface ClientInterface extends \Whoa\OAuthServer\Contracts\ClientInterface
 {
     /**
+     * @return int
+     */
+    public function getIdentity(): int;
+
+    /**
+     * @param int $identity
+     * @return ClientInterface
+     */
+    public function setIdentity(int $identity): ClientInterface;
+
+    /**
      * @param string $identifier
-     *
      * @return ClientInterface
      */
     public function setIdentifier(string $identifier): ClientInterface;
@@ -43,7 +53,6 @@ interface ClientInterface extends \Whoa\OAuthServer\Contracts\ClientInterface
 
     /**
      * @param UuidInterface|string|null $uuid
-     *
      * @return ClientInterface
      */
     public function setUuid($uuid = null): ClientInterface;
@@ -54,11 +63,10 @@ interface ClientInterface extends \Whoa\OAuthServer\Contracts\ClientInterface
     public function getName(): ?string;
 
     /**
-     * @param string $name
-     *
+     * @param string|null $name
      * @return ClientInterface
      */
-    public function setName(string $name): ClientInterface;
+    public function setName(?string $name = null): ClientInterface;
 
     /**
      * @return string|null
@@ -67,10 +75,9 @@ interface ClientInterface extends \Whoa\OAuthServer\Contracts\ClientInterface
 
     /**
      * @param string|null $description
-     *
      * @return ClientInterface
      */
-    public function setDescription(string $description = null): ClientInterface;
+    public function setDescription(?string $description = null): ClientInterface;
 
     /**
      * @return string|null
@@ -78,22 +85,19 @@ interface ClientInterface extends \Whoa\OAuthServer\Contracts\ClientInterface
     public function getCredentials(): ?string;
 
     /**
-     * @param string $credentials
-     *
+     * @param string|null $credentials
      * @return ClientInterface
      */
-    public function setCredentials(string $credentials = null): ClientInterface;
+    public function setCredentials(?string $credentials = null): ClientInterface;
 
     /**
      * @param string[] $redirectUriStrings
-     *
      * @return ClientInterface
      */
     public function setRedirectUriStrings(array $redirectUriStrings): ClientInterface;
 
     /**
      * @param string[] $scopeIdentifiers
-     *
      * @return ClientInterface
      */
     public function setScopeIdentifiers(array $scopeIdentifiers): ClientInterface;
@@ -184,16 +188,15 @@ interface ClientInterface extends \Whoa\OAuthServer\Contracts\ClientInterface
     public function disableRefreshGrant(): ClientInterface;
 
     /**
-     * @return DateTimeInterface|null
+     * @return DateTimeInterface
      */
-    public function getCreatedAt(): ?DateTimeInterface;
+    public function getCreatedAt(): DateTimeInterface;
 
     /**
-     * @param DateTimeInterface $createdAt
-     *
+     * @param DateTimeInterface|null $createdAt
      * @return ClientInterface
      */
-    public function setCreatedAt(DateTimeInterface $createdAt): ClientInterface;
+    public function setCreatedAt(?DateTimeInterface $createdAt = null): ClientInterface;
 
     /**
      * @return DateTimeInterface|null
@@ -201,9 +204,8 @@ interface ClientInterface extends \Whoa\OAuthServer\Contracts\ClientInterface
     public function getUpdatedAt(): ?DateTimeInterface;
 
     /**
-     * @param DateTimeInterface $createdAt
-     *
+     * @param DateTimeInterface|null $createdAt
      * @return ClientInterface
      */
-    public function setUpdatedAt(DateTimeInterface $createdAt): ClientInterface;
+    public function setUpdatedAt(?DateTimeInterface $createdAt = null): ClientInterface;
 }

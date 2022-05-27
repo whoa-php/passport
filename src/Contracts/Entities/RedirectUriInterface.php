@@ -31,16 +31,16 @@ use Ramsey\Uuid\UuidInterface;
 interface RedirectUriInterface
 {
     /**
-     * @return int|null
+     * @return int
      */
-    public function getIdentifier(): ?int;
+    public function getIdentity(): int;
 
     /**
-     * @param int $identifier
+     * @param int $identity
      *
      * @return RedirectUriInterface
      */
-    public function setIdentifier(int $identifier): RedirectUriInterface;
+    public function setIdentity(int $identity): RedirectUriInterface;
 
     /**
      * @return UuidInterface
@@ -55,9 +55,20 @@ interface RedirectUriInterface
     public function setUuid($uuid = null): RedirectUriInterface;
 
     /**
-     * @return string|null
+     * @return int
      */
-    public function getClientIdentifier(): ?string;
+    public function getClientIdentity(): int;
+
+    /**
+     * @param int $clientIdentity
+     * @return RedirectUriInterface
+     */
+    public function setClientIdentity(int $clientIdentity): RedirectUriInterface;
+
+    /**
+     * @return string
+     */
+    public function getClientIdentifier(): string;
 
     /**
      * @param string $identifier

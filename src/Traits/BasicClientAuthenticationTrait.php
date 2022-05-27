@@ -25,6 +25,7 @@ use Whoa\OAuthServer\Contracts\ClientInterface;
 use Whoa\OAuthServer\Exceptions\OAuthTokenBodyException;
 use Whoa\Passport\Contracts\PassportServerIntegrationInterface;
 use Psr\Http\Message\ServerRequestInterface;
+
 use function array_key_exists;
 use function assert;
 use function base64_decode;
@@ -40,23 +41,18 @@ trait BasicClientAuthenticationTrait
 {
     /**
      * @param PassportServerIntegrationInterface $integration
-     * @param ServerRequestInterface             $request
-     * @param array                              $parameters
-     * @param string                             $realm
+     * @param ServerRequestInterface $request
+     * @param array $parameters
+     * @param string $realm
      *
      * @return ClientInterface|null
-     *
-     * @SuppressWarnings(PHPMD.ElseExpression)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function determineClient(
         PassportServerIntegrationInterface $integration,
         ServerRequestInterface $request,
         array $parameters,
-        $realm = 'OAuth'
-    ): ?ClientInterface
-    {
+        string $realm = 'OAuth'
+    ): ?ClientInterface {
         // A client may use Basic authentication.
         //
         // Or
@@ -68,9 +64,9 @@ trait BasicClientAuthenticationTrait
         $authorizationHeader = $request->getHeader('Authorization');
 
         // try to parse `Authorization` header for client ID and credentials
-        $clientId          = null;
+        $clientId = null;
         $clientCredentials = null;
-        $errorHeaders      = ['WWW-Authenticate' => 'Basic realm="' . $realm . '"'];
+        $errorHeaders = ['WWW-Authenticate' => 'Basic realm="' . $realm . '"'];
         if (empty($headerArray = $authorizationHeader) === false) {
             $errorCode = OAuthTokenBodyException::ERROR_INVALID_CLIENT;
             if (empty($authHeader = $headerArray[0]) === true ||
@@ -90,7 +86,7 @@ trait BasicClientAuthenticationTrait
                     break;
                 case 2:
                 default:
-                    $clientId          = $idAndCredentials[0];
+                    $clientId = $idAndCredentials[0];
                     $clientCredentials = $idAndCredentials[1];
                     break;
             }
@@ -126,11 +122,9 @@ trait BasicClientAuthenticationTrait
                 if ($integration->verifyClientCredentials($client, $clientCredentials) === false) {
                     throw new OAuthTokenBodyException($errorCode, null, 401, $errorHeaders);
                 }
-            } else {
+            } elseif ($client->isConfidential() === true || $client->hasCredentials() === true) {
                 // no password provided
-                if ($client->isConfidential() === true || $client->hasCredentials() === true) {
-                    throw new OAuthTokenBodyException($errorCode, null, 401, $errorHeaders);
-                }
+                throw new OAuthTokenBodyException($errorCode, null, 401, $errorHeaders);
             }
         }
 

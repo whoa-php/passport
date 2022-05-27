@@ -55,13 +55,12 @@ class PassportSeedTraitTest extends TestCase
      * Test seed client.
      *
      * @return void
-     *
      * @throws Exception
      */
     public function testSeedClient()
     {
-        $client       = (new Client())->setScopeIdentifiers(['scope_1']);
-        $scopes       = [
+        $client = (new Client())->setScopeIdentifiers(['scope_1']);
+        $extraScopes = [
             'scope_2' => 'Description for scope_2',
             'scope_3' => 'Description for scope_3',
         ];
@@ -73,14 +72,20 @@ class PassportSeedTraitTest extends TestCase
         /** @var Mock $scopeRepoMock */
         /** @var Mock $uriRepoMock */
         $clientRepoMock = Mockery::mock(ClientRepositoryInterface::class);
-        $scopeRepoMock  = Mockery::mock(ScopeRepositoryInterface::class);
-        $uriRepoMock    = Mockery::mock(RedirectUriRepositoryInterface::class);
+        $scopeRepoMock = Mockery::mock(ScopeRepositoryInterface::class);
+        $uriRepoMock = Mockery::mock(RedirectUriRepositoryInterface::class);
 
         $scopeRepoMock
             ->shouldReceive('create')
             ->times(2)
             ->withAnyArgs()
-            ->andReturn(Mockery::mock(ScopeInterface::class));
+            ->andReturn($scopeMock = Mockery::mock(ScopeInterface::class));
+
+        $scopeMock
+            ->shouldReceive('getIdentifier')
+            ->times(2)
+            ->withAnyArgs()
+            ->andReturnValues(['scope_2', 'scope_3']);
 
         $clientRepoMock
             ->shouldReceive('create')
@@ -101,9 +106,9 @@ class PassportSeedTraitTest extends TestCase
         $intMock->shouldReceive('getRedirectUriRepository')->once()->withNoArgs()->andReturn($uriRepoMock);
         /** @var PassportServerIntegrationInterface $intMock */
 
-        $this->seedClient($intMock, $client, $scopes, $redirectUris);
+        $this->seedClient($intMock, $client, $extraScopes, $redirectUris);
 
-        // assert it executed exactly as described above and we need at lease 1 assert to avoid PHP unit warning.
+        // assert it executed exactly as described above, and we need at lease 1 assert to avoid PHP unit warning.
         $this->assertTrue(true);
     }
 }

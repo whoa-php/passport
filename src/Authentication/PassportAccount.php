@@ -23,6 +23,7 @@ namespace Whoa\Passport\Authentication;
 
 use Whoa\Contracts\Passport\PassportAccountInterface;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
+
 use function array_key_exists;
 use function assert;
 use function is_int;
@@ -36,12 +37,12 @@ class PassportAccount implements PassportAccountInterface
     /**
      * @var array
      */
-    private $properties;
+    private array $properties;
 
     /**
      * @var DatabaseSchemaInterface
      */
-    private $schema;
+    private DatabaseSchemaInterface $schema;
 
     /**
      * @var bool|string
@@ -60,7 +61,7 @@ class PassportAccount implements PassportAccountInterface
 
     /**
      * @param DatabaseSchemaInterface $schema
-     * @param array                   $properties
+     * @param array $properties
      */
     public function __construct(DatabaseSchemaInterface $schema, array $properties = [])
     {
@@ -95,9 +96,7 @@ class PassportAccount implements PassportAccountInterface
     {
         assert($this->hasProperty($key));
 
-        $value = $this->properties[$key];
-
-        return $value;
+        return $this->properties[$key];
     }
 
     /**

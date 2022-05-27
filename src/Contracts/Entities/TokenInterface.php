@@ -31,16 +31,15 @@ use Ramsey\Uuid\UuidInterface;
 interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\Contracts\TokenInterface
 {
     /**
-     * @return int|null
+     * @return int
      */
-    public function getIdentifier(): ?int;
+    public function getIdentity(): int;
 
     /**
-     * @param int $identifier
-     *
+     * @param int $identity
      * @return TokenInterface
      */
-    public function setIdentifier(int $identifier): TokenInterface;
+    public function setIdentity(int $identity): TokenInterface;
 
     /**
      * @return UuidInterface
@@ -49,28 +48,35 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param UuidInterface|string|null $uuid
-     *
      * @return TokenInterface
      */
     public function setUuid($uuid = null): TokenInterface;
 
     /**
+     * @return int
+     */
+    public function getClientIdentity(): int;
+
+    /**
+     * @param int $clientIdentity
+     * @return TokenInterface
+     */
+    public function setClientIdentity(int $clientIdentity): TokenInterface;
+
+    /**
      * @param string $identifier
-     *
      * @return TokenInterface
      */
     public function setClientIdentifier(string $identifier): TokenInterface;
 
     /**
      * @param int|string $identifier
-     *
      * @return TokenInterface
      */
     public function setUserIdentifier($identifier): TokenInterface;
 
     /**
      * @param string[] $identifiers
-     *
      * @return TokenInterface
      */
     public function setScopeIdentifiers(array $identifiers): TokenInterface;
@@ -87,7 +93,6 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param string|null $uri
-     *
      * @return TokenInterface
      */
     public function setRedirectUriString(?string $uri): TokenInterface;
@@ -119,28 +124,24 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param string|null $code
-     *
      * @return TokenInterface
      */
     public function setCode(?string $code): TokenInterface;
 
     /**
      * @param string|null $value
-     *
      * @return TokenInterface
      */
     public function setValue(?string $value): TokenInterface;
 
     /**
      * @param string|null $type
-     *
      * @return TokenInterface
      */
     public function setType(?string $type): TokenInterface;
 
     /**
      * @param string|null $refreshValue
-     *
      * @return TokenInterface
      */
     public function setRefreshValue(?string $refreshValue): TokenInterface;
@@ -152,7 +153,6 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param DateTimeInterface $codeCreatedAt
-     *
      * @return TokenInterface
      */
     public function setCodeCreatedAt(DateTimeInterface $codeCreatedAt): TokenInterface;
@@ -164,7 +164,6 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param DateTimeInterface $valueCreatedAt
-     *
      * @return TokenInterface
      */
     public function setValueCreatedAt(DateTimeInterface $valueCreatedAt): TokenInterface;
@@ -176,7 +175,6 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param DateTimeInterface $refreshCreatedAt
-     *
      * @return TokenInterface
      */
     public function setRefreshCreatedAt(DateTimeInterface $refreshCreatedAt): TokenInterface;
@@ -188,7 +186,6 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param DateTimeInterface $createdAt
-     *
      * @return TokenInterface
      */
     public function setCreatedAt(DateTimeInterface $createdAt): TokenInterface;
@@ -200,7 +197,6 @@ interface TokenInterface extends AuthorizationCodeInterface, \Whoa\OAuthServer\C
 
     /**
      * @param DateTimeInterface $updatedAt
-     *
      * @return TokenInterface
      */
     public function setUpdatedAt(DateTimeInterface $updatedAt): TokenInterface;

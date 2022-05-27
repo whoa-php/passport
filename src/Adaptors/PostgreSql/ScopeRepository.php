@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Adaptors\PostgreSql;
 
-use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Connection as DBALConnection;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 
 /**
@@ -32,19 +32,18 @@ class ScopeRepository extends \Whoa\Passport\Repositories\ScopeRepository
     /**
      * @var string
      */
-    private $modelClass;
+    private string $modelClass;
 
     /**
-     * @param Connection              $connection
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $databaseSchema
-     * @param string                  $modelClass
+     * @param string $modelClass
      */
     public function __construct(
-        Connection $connection,
+        DBALConnection $connection,
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Scope::class
-    )
-    {
+    ) {
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }

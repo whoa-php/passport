@@ -22,6 +22,9 @@ declare(strict_types=1);
 namespace Whoa\Tests\Passport\Authentication;
 
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Whoa\Contracts\Settings\Packages\PassportSettingsInterface;
 use Whoa\Contracts\Settings\SettingsProviderInterface;
 use Whoa\Passport\Authentication\AccountManager;
 use Whoa\Contracts\Authentication\AccountManagerInterface;
@@ -29,6 +32,7 @@ use Whoa\Passport\Authentication\PassportAccount;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Contracts\Repositories\TokenRepositoryInterface;
 use Whoa\Passport\Entities\DatabaseSchema;
+use Whoa\Passport\Exceptions\AuthenticationException;
 use Whoa\Passport\Package\PassportSettings;
 use Whoa\Tests\Passport\Data\TestContainer;
 use Mockery;
@@ -55,7 +59,7 @@ class AccountManagerTest extends TestCase
 
         /** @var DatabaseSchemaInterface $schemaMock */
         $schemaMock = Mockery::mock(DatabaseSchemaInterface::class);
-        $passport   = new PassportAccount($schemaMock);
+        $passport = new PassportAccount($schemaMock);
 
         $this->assertSame($passport, $manager->setAccount($passport)->getAccount());
     }
@@ -63,7 +67,8 @@ class AccountManagerTest extends TestCase
     /**
      * Test setting current account with token value.
      *
-     * @throws Exception
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testSetAccountWithTokenValue()
     {
@@ -71,21 +76,21 @@ class AccountManagerTest extends TestCase
 
         /** @var Mock $repoMock */
         /** @var Mock $providerMock */
-        $container[TokenRepositoryInterface::class]  = $repoMock = Mockery::mock(TokenRepositoryInterface::class);
+        $container[TokenRepositoryInterface::class] = $repoMock = Mockery::mock(TokenRepositoryInterface::class);
         $container[SettingsProviderInterface::class] = $providerMock = Mockery::mock(SettingsProviderInterface::class);
-        $container[DatabaseSchemaInterface::class]   = $schema = new DatabaseSchema();
+        $container[DatabaseSchemaInterface::class] = $schema = new DatabaseSchema();
 
-        $timeout    = 3600;
+        $timeout = 3600;
         $tokenValue = '123';
 
         $providerMock->shouldReceive('get')->once()->with(PassportSettings::class)->andReturn([
-            PassportSettings::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS => $timeout,
+            PassportSettingsInterface::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS => $timeout,
         ]);
 
         $properties = [
-            $schema->getTokensUserIdentityColumn()   => $userId = '123',
+            $schema->getTokensUserIdentityColumn() => $userId = '123',
             $schema->getTokensClientIdentityColumn() => $clientId = 'some_client_id',
-            $schema->getTokensViewScopesColumn()     => [
+            $schema->getTokensViewScopesColumn() => [
                 $scope1 = 'some_scope_1',
             ],
         ];
@@ -103,23 +108,25 @@ class AccountManagerTest extends TestCase
 
     /**
      * Test setting current account with invalid token value.
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testSetAccountWithInvalidTokenValue()
     {
-        $this->expectException(\Whoa\Passport\Exceptions\AuthenticationException::class);
+        $this->expectException(AuthenticationException::class);
 
         $container = new TestContainer();
 
         /** @var Mock $repoMock */
         /** @var Mock $providerMock */
-        $container[TokenRepositoryInterface::class]  = $repoMock = Mockery::mock(TokenRepositoryInterface::class);
+        $container[TokenRepositoryInterface::class] = $repoMock = Mockery::mock(TokenRepositoryInterface::class);
         $container[SettingsProviderInterface::class] = $providerMock = Mockery::mock(SettingsProviderInterface::class);
 
-        $timeout    = 3600;
+        $timeout = 3600;
         $tokenValue = '123';
 
         $providerMock->shouldReceive('get')->once()->with(PassportSettings::class)->andReturn([
-            PassportSettings::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS => $timeout,
+            PassportSettingsInterface::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS => $timeout,
         ]);
 
         $properties = null;

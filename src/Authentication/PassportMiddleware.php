@@ -22,6 +22,9 @@ declare(strict_types=1);
 namespace Whoa\Passport\Authentication;
 
 use Closure;
+use Laminas\Diactoros\Response\EmptyResponse;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Contracts\Application\MiddlewareInterface;
 use Whoa\Contracts\Passport\PassportAccountManagerInterface;
 use Whoa\Contracts\Settings\SettingsProviderInterface;
@@ -31,7 +34,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use Zend\Diactoros\Response\EmptyResponse;
+
 use function assert;
 use function call_user_func;
 use function is_callable;
@@ -43,22 +46,22 @@ use function substr;
  */
 class PassportMiddleware implements MiddlewareInterface
 {
-    /** Middleware handler */
-    const HANDLER = [self::class, self::MIDDLEWARE_METHOD_NAME];
+    /** @var callable Middleware handler */
+    public const HANDLER = [self::class, self::MIDDLEWARE_METHOD_NAME];
 
     /**
      * @inheritdoc
      *
-     * @SuppressWarnings(PHPMD.ElseExpression)
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public static function handle(
         ServerRequestInterface $request,
         Closure $next,
         ContainerInterface $container
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $header = $request->getHeader('Authorization');
-        // if value has Bearer token and it is a valid json with 2 required fields and they are strings
+        // if value has Bearer token, and it is a valid json with 2 required fields and they are strings
         if (empty($header) === false &&
             substr($value = $header[0], 0, 7) === 'Bearer ' &&
             is_string($tokenValue = substr($value, 7)) === true &&
@@ -80,12 +83,10 @@ class PassportMiddleware implements MiddlewareInterface
 
                 return static::createAuthenticationFailedResponse($container);
             }
-        } else {
-            if (($logger = static::getLoggerIfEnabled($container)) !== null) {
-                $logger->debug(
-                    'No Bearer token for Passport authentication. The request is not authenticated.'
-                );
-            }
+        } elseif (($logger = static::getLoggerIfEnabled($container)) !== null) {
+            $logger->debug(
+                'No Bearer token for Passport authentication. The request is not authenticated.'
+            );
         }
 
         // call next middleware handler
@@ -96,25 +97,27 @@ class PassportMiddleware implements MiddlewareInterface
      * @param ContainerInterface $container
      *
      * @return ResponseInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected static function createAuthenticationFailedResponse(ContainerInterface $container): ResponseInterface
     {
         /** @var SettingsProviderInterface $provider */
         $provider = $container->get(SettingsProviderInterface::class);
         $settings = $provider->get(S::class);
-        $factory  = $settings[S::KEY_FAILED_CUSTOM_UNAUTHENTICATED_FACTORY] ?? null;
+        $factory = $settings[S::KEY_FAILED_CUSTOM_UNAUTHENTICATED_FACTORY] ?? null;
 
         assert($factory === null || is_callable($factory) === true);
 
-        $response = $factory === null ? new EmptyResponse(401) : call_user_func($factory);
-
-        return $response;
+        return $factory === null ? new EmptyResponse(401) : call_user_func($factory);
     }
 
     /**
      * @param ContainerInterface $container
      *
      * @return null|LoggerInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected static function getLoggerIfEnabled(ContainerInterface $container): ?LoggerInterface
     {

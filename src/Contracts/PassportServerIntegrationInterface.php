@@ -60,16 +60,16 @@ interface PassportServerIntegrationInterface
     public function getRedirectUriRepository(): RedirectUriRepositoryInterface;
 
     /**
-     * @param string      $userName
+     * @param string $userName
      * @param string|null $password
-     * @param mixed|null  $extras
+     * @param mixed|null $extras
      *
      * @return mixed
      */
     public function validateUserId(string $userName, ?string $password = null, $extras = null);
 
     /**
-     * @param int        $userIdentity
+     * @param int $userIdentity
      * @param array|null $scope
      *
      * @return array|null
@@ -105,21 +105,19 @@ interface PassportServerIntegrationInterface
      */
     public function createInvalidClientAndRedirectUriErrorResponse(): ResponseInterface;
 
-    /** @noinspection PhpTooManyParametersInspection
-     * @param string          $type
+    /**
+     * @param string $type
      * @param ClientInterface $client
-     * @param string|null     $redirectUri
-     * @param bool            $isScopeModified
-     * @param string[]|null   $scopeList
-     * @param string|null     $state
-     * @param array           $extraParameters
+     * @param string|null $redirectUri
+     * @param bool $isScopeModified
+     * @param string[]|null $scopeList
+     * @param string|null $state
+     * @param array $extraParameters
      *
      * @return ResponseInterface
      *
      * @link https://tools.ietf.org/html/rfc6749#section-4.1.2
      * @link https://tools.ietf.org/html/rfc6749#section-4.2.2
-     *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function createAskResourceOwnerForApprovalResponse(
         string $type,
@@ -145,7 +143,7 @@ interface PassportServerIntegrationInterface
 
     /**
      * @param ClientInterface $client
-     * @param string          $credentials
+     * @param string $credentials
      *
      * @return bool
      */

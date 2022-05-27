@@ -32,19 +32,18 @@ class ScopeRepository extends \Whoa\Passport\Repositories\ScopeRepository
     /**
      * @var string
      */
-    private $modelClass;
+    private string $modelClass;
 
     /**
-     * @param Connection              $connection
+     * @param Connection $connection
      * @param DatabaseSchemaInterface $databaseSchema
-     * @param string                  $modelClass
+     * @param string $modelClass
      */
     public function __construct(
         Connection $connection,
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Scope::class
-    )
-    {
+    ) {
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }

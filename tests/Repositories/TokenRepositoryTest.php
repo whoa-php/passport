@@ -22,7 +22,9 @@ declare(strict_types=1);
 namespace Whoa\Tests\Passport\Repositories;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\Types\Type;
 use Exception;
+use Whoa\Doctrine\Types\UuidType as WhoaUuidType;
 use Whoa\Passport\Adaptors\Generic\Client;
 use Whoa\Passport\Adaptors\Generic\ClientRepository;
 use Whoa\Passport\Adaptors\Generic\Token;
@@ -51,12 +53,13 @@ class TokenRepositoryTest extends TestCase
     {
         parent::setUp();
 
+        Type::hasType(WhoaUuidType::NAME) === true ?: Type::addType(WhoaUuidType::NAME, WhoaUuidType::class);
+
         $this->initDatabase();
     }
 
     /**
      * Test basic CRUD.
-     *
      * @throws Exception
      */
     public function testCrud()
@@ -68,7 +71,7 @@ class TokenRepositoryTest extends TestCase
 
         $newCode = (new Token())
             ->setUserIdentifier(PassportServerTest::TEST_USER_ID)
-            ->setClientIdentifier('abc')
+            ->setClientIdentifier('default_client_1')
             ->setCode('some-secret-code');
         $tokenRepo->inTransaction(function () use (
             $tokenRepo,
@@ -77,26 +80,36 @@ class TokenRepositoryTest extends TestCase
             &$newCode
         ) {
             $clientRepo->create(
-                $client = (new Client())->setIdentifier($newCode->getClientIdentifier())->setName('client name')
+                $client = (new Client())->setIdentifier('default_client_1')
+                    ->setName('Default Client 1')
+                    ->setDescription('Description for default client 1')
             );
 
             $newCode = $tokenRepo->createCode($newCode);
 
-            $scopeRepo->create($scope1 = (new Scope())->setIdentifier('scope1'));
-            $scopeRepo->create($scope2 = (new Scope())->setIdentifier('scope2'));
+            $scopeRepo->create(
+                $scope1 = (new Scope())->setIdentifier('default_scope_1')
+                    ->setName('Default scope 1')
+                    ->setDescription('Description for default scope 1')
+            );
+            $scopeRepo->create(
+                $scope2 = (new Scope())->setIdentifier('default_scope_2')
+                    ->setName('Default scope 2')
+                    ->setDescription('Description for default scope 2')
+            );
 
-            $tokenRepo->bindScopes($newCode->getIdentifier(), [$scope1, $scope2]);
+            $tokenRepo->bindScopes($newCode->getIdentity(), [$scope1, $scope2]);
         });
         $this->assertNotNull($newCode);
 
-        $this->assertNotNull($tokenRepo->read($newCode->getIdentifier()));
+        $this->assertNotNull($tokenRepo->read($newCode->getIdentity()));
         $this->assertNotNull($token = $tokenRepo->readByCode($newCode->getCode(), 10));
         $this->assertEquals(PassportServerTest::TEST_USER_ID, $token->getUserIdentifier());
         $this->assertEquals($newCode->getCode(), $token->getCode());
         $this->assertNull($tokenRepo->readByCode($newCode->getCode(), 0));
         $this->assertNull($tokenRepo->readByRefresh($newCode->getCode(), 10));
         $this->assertTrue($token instanceof TokenInterface);
-        $this->assertEquals($newCode->getIdentifier(), $token->getIdentifier());
+        $this->assertEquals($newCode->getIdentity(), $token->getIdentity());
         $this->assertEquals($newCode->getClientIdentifier(), $token->getClientIdentifier());
         $this->assertEquals($newCode->getUserIdentifier(), $token->getUserIdentifier());
         $this->assertTrue($newCode->getCodeCreatedAt() instanceof DateTimeImmutable);
@@ -114,8 +127,8 @@ class TokenRepositoryTest extends TestCase
             ->setRefreshValue('some-refresh-value');
         $tokenRepo->assignValuesToCode($newToken, 10);
 
-        $sameToken = $tokenRepo->read($token->getIdentifier());
-        $this->assertEquals($newCode->getIdentifier(), $sameToken->getIdentifier());
+        $sameToken = $tokenRepo->read($token->getIdentity());
+        $this->assertEquals($newCode->getIdentity(), $sameToken->getIdentity());
         $this->assertEquals($newToken->getValue(), $sameToken->getValue());
         $this->assertEquals($newToken->getType(), $sameToken->getType());
         $this->assertEquals($newToken->getRefreshValue(), $sameToken->getRefreshValue());
@@ -127,25 +140,24 @@ class TokenRepositoryTest extends TestCase
         $this->assertCount(1, $tokensByUser = $tokenRepo->readByUser(PassportServerTest::TEST_USER_ID, 10));
         $scopeIdentifiers = array_shift($tokensByUser)->getScopeIdentifiers();
         sort($scopeIdentifiers);
-        $this->assertEquals(['scope1', 'scope2'], $scopeIdentifiers);
+        $this->assertEquals(['default_scope_1', 'default_scope_2'], $scopeIdentifiers);
 
         $this->assertNotEmpty($tokenRepo->readPassport($sameToken->getValue(), 10));
 
-        $tokenRepo->unbindScopes($sameToken->getIdentifier());
-        $sameToken = $tokenRepo->read($token->getIdentifier());
+        $tokenRepo->unbindScopes($sameToken->getIdentity());
+        $sameToken = $tokenRepo->read($token->getIdentity());
         $this->assertCount(0, $sameToken->getScopeIdentifiers());
 
-        $tokenRepo->disable($newCode->getIdentifier());
+        $tokenRepo->disable($newCode->getIdentity());
         $this->assertNull($tokenRepo->readByCode($newCode->getCode(), 10));
 
-        $tokenRepo->delete($newCode->getIdentifier());
+        $tokenRepo->delete($newCode->getIdentity());
 
-        $this->assertEmpty($tokenRepo->read($newCode->getIdentifier()));
+        $this->assertEmpty($tokenRepo->read($newCode->getIdentity()));
     }
 
     /**
      * Test create token (Resource Owner Credentials case).
-     *
      * @throws Exception
      */
     public function testCreateTokenWithRefresh()
@@ -154,7 +166,12 @@ class TokenRepositoryTest extends TestCase
         /** @var ClientRepositoryInterface $clientRepo */
         [$tokenRepo, , $clientRepo] = $this->createRepositories();
 
-        $clientRepo->create($client = (new Client())->setIdentifier('client1')->setName('client name'));
+        $clientRepo->create(
+            $client = (new Client())->setIdentifier('default_client_1')
+                ->setName('Default Client 1')
+                ->setDescription('Description for default client 1')
+        );
+
         $unsavedToken = (new Token())
             ->setClientIdentifier($client->getIdentifier())
             ->setUserIdentifier(PassportServerTest::TEST_USER_ID)
@@ -162,10 +179,10 @@ class TokenRepositoryTest extends TestCase
             ->setType('bearer')
             ->setRefreshValue('refresh-token');
         $this->assertNotNull($newToken = $tokenRepo->createToken($unsavedToken));
-        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentifier());
+        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentity());
 
-        $this->assertEquals($tokenId, $tokenRepo->readByValue('some-token', 10)->getIdentifier());
-        $this->assertEquals($tokenId, $tokenRepo->readByRefresh('refresh-token', 10)->getIdentifier());
+        $this->assertEquals($tokenId, $tokenRepo->readByValue('some-token', 10)->getIdentity());
+        $this->assertEquals($tokenId, $tokenRepo->readByRefresh('refresh-token', 10)->getIdentity());
     }
 
     /**
@@ -179,7 +196,11 @@ class TokenRepositoryTest extends TestCase
         /** @var ClientRepositoryInterface $clientRepo */
         [$tokenRepo, , $clientRepo] = $this->createRepositories();
 
-        $clientRepo->create($client = (new Client())->setIdentifier('client1')->setName('client name'));
+        $clientRepo->create(
+            $client = (new Client())->setIdentifier('default_client_1')
+                ->setName('Default Client 1')
+                ->setDescription('Description for default client 1')
+        );
         $unsavedToken = (new Token())
             ->setClientIdentifier($client->getIdentifier())
             ->setUserIdentifier(PassportServerTest::TEST_USER_ID)
@@ -187,7 +208,7 @@ class TokenRepositoryTest extends TestCase
             ->setType('bearer')
             ->setRefreshValue('refresh-token');
         $this->assertNotNull($newToken = $tokenRepo->createToken($unsavedToken));
-        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentifier());
+        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentity());
 
         // re-read
         $this->assertTrue($tokenRepo->read($tokenId)->isEnabled());
@@ -209,7 +230,11 @@ class TokenRepositoryTest extends TestCase
         /** @var ClientRepositoryInterface $clientRepo */
         [$tokenRepo, , $clientRepo] = $this->createRepositories();
 
-        $clientRepo->create($client = (new Client())->setIdentifier('client1')->setName('client name'));
+        $clientRepo->create(
+            $client = (new Client())->setIdentifier('default_client_1')
+                ->setName('Default Client 1')
+                ->setDescription('Description for default client 1')
+        );
         $unsavedToken = (new Token())
             ->setClientIdentifier($client->getIdentifier())
             ->setUserIdentifier(PassportServerTest::TEST_USER_ID)
@@ -218,7 +243,7 @@ class TokenRepositoryTest extends TestCase
             ->setRefreshValue('refresh-token')
             ->setDisabled();
         $this->assertNotNull($newToken = $tokenRepo->createToken($unsavedToken));
-        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentifier());
+        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentity());
 
         // re-read
         $this->assertFalse($tokenRepo->read($tokenId)->isEnabled());
@@ -235,16 +260,20 @@ class TokenRepositoryTest extends TestCase
         /** @var ClientRepositoryInterface $clientRepo */
         [$tokenRepo, , $clientRepo] = $this->createRepositories();
 
-        $clientRepo->create($client = (new Client())->setIdentifier('client1')->setName('client name'));
+        $clientRepo->create(
+            $client = (new Client())->setIdentifier('default_client_1')
+                ->setName('Default Client 1')
+                ->setDescription('Description for default client 1')
+        );
         $unsavedToken = (new Token())
             ->setClientIdentifier($client->getIdentifier())
             ->setUserIdentifier(PassportServerTest::TEST_USER_ID)
             ->setValue('some-token')
             ->setType('bearer');
         $this->assertNotNull($newToken = $tokenRepo->createToken($unsavedToken));
-        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentifier());
+        $this->assertGreaterThan(0, $tokenId = $newToken->getIdentity());
 
-        $this->assertEquals($tokenId, $tokenRepo->readByValue('some-token', 10)->getIdentifier());
+        $this->assertEquals($tokenId, $tokenRepo->readByValue('some-token', 10)->getIdentity());
     }
 
     /**
@@ -252,8 +281,8 @@ class TokenRepositoryTest extends TestCase
      */
     private function createRepositories(): array
     {
-        $tokenRepo  = new TokenRepository($this->getConnection(), $this->getDatabaseSchema());
-        $scopeRepo  = new ScopeRepository($this->getConnection(), $this->getDatabaseSchema());
+        $tokenRepo = new TokenRepository($this->getConnection(), $this->getDatabaseSchema());
+        $scopeRepo = new ScopeRepository($this->getConnection(), $this->getDatabaseSchema());
         $clientRepo = new ClientRepository($this->getConnection(), $this->getDatabaseSchema());
 
         return [$tokenRepo, $scopeRepo, $clientRepo];

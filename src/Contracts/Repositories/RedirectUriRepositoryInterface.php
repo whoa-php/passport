@@ -51,11 +51,11 @@ interface RedirectUriRepositoryInterface
     public function create(RedirectUriInterface $redirectUri): RedirectUriInterface;
 
     /**
-     * @param int $identifier
+     * @param int $identity
      *
-     * @return RedirectUriInterface
+     * @return RedirectUriInterface|null
      */
-    public function read(int $identifier): RedirectUriInterface;
+    public function read(int $identity): ?RedirectUriInterface;
 
     /**
      * @param RedirectUriInterface $redirectUri

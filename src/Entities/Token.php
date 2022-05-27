@@ -22,8 +22,9 @@ declare(strict_types=1);
 namespace Whoa\Passport\Entities;
 
 use DateTimeInterface;
-use Whoa\Passport\Contracts\Entities\TokenInterface;
-use Whoa\Passport\Models\Token as Model;
+use Whoa\Passport\Contracts\Entities\TokenInterface as Entity;
+use Whoa\Passport\Contracts\Models\TokenModelInterface as Model;
+
 use function assert;
 use function implode;
 use function is_int;
@@ -32,124 +33,129 @@ use function is_string;
 /**
  * @package Whoa\Passport
  */
-abstract class Token extends DatabaseItem implements TokenInterface
+abstract class Token extends DatabaseItem implements Entity
 {
-    /** Field name */
-    const FIELD_ID = Model::FIELD_ID;
+    /** @var string Field name */
+    public const FIELD_ID = Model::FIELD_ID;
 
-    /** Field name */
-    const FIELD_ID_CLIENT = Model::FIELD_ID_CLIENT;
+    /** @var string Field name */
+    public const FIELD_ID_CLIENT = Model::FIELD_ID_CLIENT;
 
-    /** Field name */
-    const FIELD_ID_USER = 'id_user';
+    /** @var string Field name */
+    public const FIELD_ID_USER = 'id_user';
 
-    /** Field name */
-    const FIELD_SCOPES = Model::REL_SCOPES;
+    /** @var string Field name */
+    public const FIELD_SCOPES = Model::REL_SCOPES;
 
-    /** Field name */
-    const FIELD_IS_SCOPE_MODIFIED = Model::FIELD_IS_SCOPE_MODIFIED;
+    /** @var string Field name */
+    public const FIELD_IS_SCOPE_MODIFIED = Model::FIELD_IS_SCOPE_MODIFIED;
 
-    /** Field name */
-    const FIELD_IS_ENABLED = Model::FIELD_IS_ENABLED;
+    /** @var string Field name */
+    public const FIELD_IS_ENABLED = Model::FIELD_IS_ENABLED;
 
-    /** Field name */
-    const FIELD_REDIRECT_URI = Model::FIELD_REDIRECT_URI;
+    /** @var string Field name */
+    public const FIELD_REDIRECT_URI = Model::FIELD_REDIRECT_URI;
 
-    /** Field name */
-    const FIELD_CODE = Model::FIELD_CODE;
+    /** @var string Field name */
+    public const FIELD_CODE = Model::FIELD_CODE;
 
-    /** Field name */
-    const FIELD_VALUE = Model::FIELD_VALUE;
+    /** @var string Field name */
+    public const FIELD_VALUE = Model::FIELD_VALUE;
 
-    /** Field name */
-    const FIELD_TYPE = Model::FIELD_TYPE;
+    /** @var string Field name */
+    public const FIELD_TYPE = Model::FIELD_TYPE;
 
-    /** Field name */
-    const FIELD_REFRESH = Model::FIELD_REFRESH;
+    /** @var string Field name */
+    public const FIELD_REFRESH = Model::FIELD_REFRESH;
 
-    /** Field name */
-    const FIELD_CODE_CREATED_AT = Model::FIELD_CODE_CREATED_AT;
+    /** @var string Field name */
+    public const FIELD_CODE_CREATED_AT = Model::FIELD_CODE_CREATED_AT;
 
-    /** Field name */
-    const FIELD_VALUE_CREATED_AT = Model::FIELD_VALUE_CREATED_AT;
+    /** @var string Field name */
+    public const FIELD_VALUE_CREATED_AT = Model::FIELD_VALUE_CREATED_AT;
 
-    /** Field name */
-    const FIELD_REFRESH_CREATED_AT = Model::FIELD_REFRESH_CREATED_AT;
+    /** @var string Field name */
+    public const FIELD_REFRESH_CREATED_AT = Model::FIELD_REFRESH_CREATED_AT;
 
     /**
-     * @var int|null
+     * @var int
      */
-    private $identifierField;
+    private int $identityField = 0;
+
+    /**
+     * @var int
+     */
+    private int $clientIdentityField = 0;
 
     /**
      * @var string
      */
-    private $clientIdentifierField = '';
+    private string $clientIdentifierField = '';
 
     /**
      * @var int|string|null
      */
-    private $userIdentifierField;
+    private $userIdentifierField = null;
 
     /**
      * @var string[]
      */
-    private $scopeIdentifiers = [];
+    private array $scopeIdentifiers = [];
 
     /**
      * @var string|null
      */
-    private $scopeList = null;
+    private ?string $scopeList = null;
 
     /**
      * @var bool
      */
-    private $isScopeModified = false;
+    private bool $isScopeModified = false;
 
     /**
      * @var bool
      */
-    private $isEnabled = true;
+    private bool $isEnabled = true;
 
     /**
      * @var string|null
      */
-    private $redirectUriString = null;
+    private ?string $redirectUriString = null;
 
     /**
      * @var string|null
      */
-    private $codeField = null;
+    private ?string $codeField = null;
 
     /**
      * @var string|null
      */
-    private $valueField = null;
+    private ?string $valueField = null;
 
     /**
      * @var string|null
      */
-    private $typeField = null;
+    private ?string $typeField = null;
 
     /**
      * @var string|null
      */
-    private $refreshValueField = null;
+    private ?string $refreshValueField = null;
 
     /**
      * @var DateTimeInterface|null
      */
-    private $codeCreatedAtField = null;
+    private ?DateTimeInterface $codeCreatedAtField = null;
 
     /**
      * @var DateTimeInterface|null
      */
-    private $valueCreatedAtField = null;
+    private ?DateTimeInterface $valueCreatedAtField = null;
 
     /**
      * @var DateTimeInterface|null
      */
-    private $refreshCreatedAtField = null;
+    private ?DateTimeInterface $refreshCreatedAtField = null;
 
     /**
      * Constructor.
@@ -157,16 +163,14 @@ abstract class Token extends DatabaseItem implements TokenInterface
     public function __construct()
     {
         if ($this->hasDynamicProperty(static::FIELD_ID) === true) {
-            $this
-                ->setIdentifier((int)$this->{static::FIELD_ID})
-                ->setClientIdentifier($this->{static::FIELD_ID_CLIENT})
+            $this->setIdentity((int)$this->{static::FIELD_ID})
+                ->setClientIdentity((int)$this->{static::FIELD_ID_CLIENT})
                 ->setUserIdentifier((int)$this->{static::FIELD_ID_USER})
                 ->setRedirectUriString($this->{static::FIELD_REDIRECT_URI})
                 ->setCode($this->{static::FIELD_CODE})
                 ->setType($this->{static::FIELD_TYPE})
                 ->setValue($this->{static::FIELD_VALUE})
-                ->setRefreshValue($this->{static::FIELD_REFRESH});
-            $this
+                ->setRefreshValue($this->{static::FIELD_REFRESH})
                 ->parseIsScopeModified($this->{static::FIELD_IS_SCOPE_MODIFIED})
                 ->parseIsEnabled($this->{static::FIELD_IS_ENABLED});
         }
@@ -175,17 +179,17 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function getIdentifier(): ?int
+    public function getIdentity(): int
     {
-        return $this->identifierField;
+        return $this->identityField;
     }
 
     /**
      * @inheritdoc
      */
-    public function setIdentifier(int $identifier): TokenInterface
+    public function setIdentity(int $identity): Entity
     {
-        $this->identifierField = $identifier;
+        $this->identityField = $identity;
 
         return $this;
     }
@@ -193,11 +197,28 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritDoc
      */
-    public function setUuid($uuid = null): TokenInterface
+    public function setUuid($uuid = null): Entity
     {
-        /** @var TokenInterface $self */
+        /** @var Entity $self */
         $self = $this->setUuidImpl($uuid);
 
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getClientIdentity(): int
+    {
+        return $this->clientIdentityField;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setClientIdentity(int $clientIdentity): Entity
+    {
+        $this->clientIdentityField = $clientIdentity;
         return $this;
     }
 
@@ -212,7 +233,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setClientIdentifier(string $identifier): TokenInterface
+    public function setClientIdentifier(string $identifier): Entity
     {
         $this->clientIdentifierField = $identifier;
 
@@ -230,7 +251,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setUserIdentifier($identifier): TokenInterface
+    public function setUserIdentifier($identifier): Entity
     {
         assert(is_int($identifier) === true || is_string($identifier) === true);
 
@@ -250,7 +271,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setScopeIdentifiers(array $identifiers): TokenInterface
+    public function setScopeIdentifiers(array $identifiers): Entity
     {
         $this->scopeIdentifiers = $identifiers;
 
@@ -282,7 +303,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setRedirectUriString(?string $uri): TokenInterface
+    public function setRedirectUriString(?string $uri): Entity
     {
         $this->redirectUriString = $uri;
 
@@ -300,7 +321,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setScopeModified(): TokenInterface
+    public function setScopeModified(): Entity
     {
         $this->isScopeModified = true;
 
@@ -310,7 +331,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setScopeUnmodified(): TokenInterface
+    public function setScopeUnmodified(): Entity
     {
         $this->isScopeModified = false;
 
@@ -328,7 +349,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setEnabled(): TokenInterface
+    public function setEnabled(): Entity
     {
         $this->isEnabled = true;
 
@@ -338,7 +359,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setDisabled(): TokenInterface
+    public function setDisabled(): Entity
     {
         $this->isEnabled = false;
 
@@ -356,7 +377,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setCode(?string $code): TokenInterface
+    public function setCode(?string $code): Entity
     {
         $this->codeField = $code;
 
@@ -374,7 +395,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setValue(?string $value): TokenInterface
+    public function setValue(?string $value): Entity
     {
         $this->valueField = $value;
 
@@ -392,7 +413,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setType(?string $type): TokenInterface
+    public function setType(?string $type): Entity
     {
         $this->typeField = $type;
 
@@ -410,7 +431,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setRefreshValue(?string $refreshValue): TokenInterface
+    public function setRefreshValue(?string $refreshValue): Entity
     {
         $this->refreshValueField = $refreshValue;
 
@@ -432,7 +453,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setCodeCreatedAt(DateTimeInterface $codeCreatedAt): TokenInterface
+    public function setCodeCreatedAt(DateTimeInterface $codeCreatedAt): Entity
     {
         $this->codeCreatedAtField = $codeCreatedAt;
 
@@ -456,7 +477,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setValueCreatedAt(DateTimeInterface $valueCreatedAt): TokenInterface
+    public function setValueCreatedAt(DateTimeInterface $valueCreatedAt): Entity
     {
         $this->valueCreatedAtField = $valueCreatedAt;
 
@@ -480,7 +501,7 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setRefreshCreatedAt(DateTimeInterface $refreshCreatedAt): TokenInterface
+    public function setRefreshCreatedAt(DateTimeInterface $refreshCreatedAt): Entity
     {
         $this->refreshCreatedAtField = $refreshCreatedAt;
 
@@ -490,9 +511,9 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setCreatedAt(DateTimeInterface $createdAt): TokenInterface
+    public function setCreatedAt(DateTimeInterface $createdAt): Entity
     {
-        /** @var TokenInterface $self */
+        /** @var Entity $self */
         $self = $this->setCreatedAtImpl($createdAt);
 
         return $self;
@@ -501,9 +522,9 @@ abstract class Token extends DatabaseItem implements TokenInterface
     /**
      * @inheritdoc
      */
-    public function setUpdatedAt(DateTimeInterface $updatedAt): TokenInterface
+    public function setUpdatedAt(DateTimeInterface $updatedAt): Entity
     {
-        /** @var TokenInterface $self */
+        /** @var Entity $self */
         $self = $this->setUpdatedAtImpl($updatedAt);
 
         return $self;
@@ -519,7 +540,6 @@ abstract class Token extends DatabaseItem implements TokenInterface
 
     /**
      * @param string $value
-     *
      * @return Token
      */
     protected function parseIsScopeModified(string $value): Token
@@ -531,7 +551,6 @@ abstract class Token extends DatabaseItem implements TokenInterface
 
     /**
      * @param string $value
-     *
      * @return Token
      */
     protected function parseIsEnabled(string $value): Token

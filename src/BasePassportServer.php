@@ -21,6 +21,9 @@ declare(strict_types=1);
 
 namespace Whoa\Passport;
 
+use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\Response\RedirectResponse;
+use Laminas\Diactoros\Uri;
 use Whoa\OAuthServer\BaseAuthorizationServer;
 use Whoa\OAuthServer\Contracts\AuthorizationCodeInterface;
 use Whoa\OAuthServer\Contracts\ClientInterface;
@@ -37,21 +40,14 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerAwareInterface as LAI;
 use Psr\Log\LoggerAwareTrait;
-use Zend\Diactoros\Response\JsonResponse;
-use Zend\Diactoros\Response\RedirectResponse;
-use Zend\Diactoros\Uri;
+
 use function array_filter;
 use function assert;
 use function in_array;
 use function is_int;
-use function is_string;
 
 /**
  * @package Whoa\Passport
- *
- * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 abstract class BasePassportServer extends BaseAuthorizationServer implements PassportServerInterface, LAI
 {
@@ -59,26 +55,23 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
     /**
      * @param PassportServerIntegrationInterface $integration
-     * @param ServerRequestInterface             $request
-     * @param array                              $parameters
-     * @param string                             $realm
+     * @param ServerRequestInterface $request
+     * @param array $parameters
+     * @param string $realm
      *
      * @return ClientInterface|null
-     *
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     abstract protected function determineClient(
         PassportServerIntegrationInterface $integration,
         ServerRequestInterface $request,
         array $parameters,
-        $realm = 'OAuth'
+        string $realm = 'OAuth'
     ): ?ClientInterface;
 
     /**
      * @var PassportServerIntegrationInterface
      */
-    private $integration;
+    private PassportServerIntegrationInterface $integration;
 
     /**
      * @param PassportServerIntegrationInterface $integration
@@ -92,8 +85,6 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
     /**
      * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function createAuthorization(array $parameters): ResponseInterface
     {
@@ -122,7 +113,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
                     // @link https://tools.ietf.org/html/rfc6749#section-3.1.1 ->
                     // @link https://tools.ietf.org/html/rfc6749#section-4.1.2.1
                     $this->logInfo('Unsupported response type in request.', ['response_type' => $responseType]);
-                    $errorCode = OAuthCodeRedirectException::ERROR_UNSUPPORTED_RESPONSE_TYPE;
+                    $errorCode = OAuthRedirectException::ERROR_UNSUPPORTED_RESPONSE_TYPE;
                     throw new OAuthCodeRedirectException($errorCode, $redirectUri);
             }
         } catch (OAuthRedirectException $exception) {
@@ -138,7 +129,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
     public function postCreateToken(ServerRequestInterface $request): ResponseInterface
     {
         try {
-            $parameters       = $request->getParsedBody();
+            $parameters = $request->getParsedBody();
             $determinedClient = $this->determineClient($this->getIntegration(), $request, $parameters);
 
             switch ($grantType = $this->getGrantType($parameters)) {
@@ -184,19 +175,17 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         ) {
             $this->logInfo(
                 'Code has invalid redirect URI which do not match any redirect URI for its client.',
-                ['id' => $code->getIdentifier()]
+                ['id' => $code->getIdentity()]
             );
             return $this->getIntegration()->createInvalidClientAndRedirectUriErrorResponse();
         }
 
         $code->setCode($this->getIntegration()->generateCodeValue($code));
 
-        $tokenRepo   = $this->getIntegration()->getTokenRepository();
+        $tokenRepo = $this->getIntegration()->getTokenRepository();
         $createdCode = $tokenRepo->createCode($code);
 
-        $response = $this->createRedirectCodeResponse($createdCode, $state);
-
-        return $response;
+        return $this->createRedirectCodeResponse($createdCode, $state);
     }
 
     /**
@@ -210,7 +199,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         ) {
             $this->logInfo(
                 'Token has invalid redirect URI which do not match any redirect URI for its client.',
-                ['id' => $token->getIdentifier()]
+                ['id' => $token->getIdentity()]
             );
             return $this->getIntegration()->createInvalidClientAndRedirectUriErrorResponse();
         }
@@ -222,15 +211,11 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         $token->setValue($tokenValue)->setType($tokenType)->setRefreshValue($refreshValue);
         $savedToken = $this->getIntegration()->getTokenRepository()->createToken($token);
 
-        $response = $this->createRedirectTokenResponse($savedToken, $tokenExpiresIn, $state);
-
-        return $response;
+        return $this->createRedirectTokenResponse($savedToken, $tokenExpiresIn, $state);
     }
 
-    /** @noinspection PhpTooManyParametersInspection
+    /**
      * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function codeCreateAskResourceOwnerForApprovalResponse(
         ClientInterface $client,
@@ -239,8 +224,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         array $scopeList = null,
         string $state = null,
         array $extraParameters = []
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $this->logDebug('Asking resource owner for scope approval (code grant).');
         return $this->getIntegration()->createAskResourceOwnerForApprovalResponse(
             ResponseTypes::AUTHORIZATION_CODE,
@@ -268,8 +252,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
     public function codeCreateAccessTokenResponse(
         AuthorizationCodeInterface $code,
         array $extraParameters = []
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         /** @var Token $code */
         assert($code instanceof Token);
         $updatedToken = clone $code;
@@ -293,15 +276,13 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
         /** @var TokenInterface $code */
 
-        $identifier = $code->getIdentifier();
+        $identifier = $code->getIdentity();
         $this->logInfo('Revoking token.', ['token_id' => $identifier]);
         $this->getIntegration()->getTokenRepository()->disable($identifier);
     }
 
-    /** @noinspection PhpTooManyParametersInspection
+    /**
      * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function implicitCreateAskResourceOwnerForApprovalResponse(
         ClientInterface $client,
@@ -310,8 +291,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         array $scopeList = null,
         string $state = null,
         array $extraParameters = []
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $response = $this->getIntegration()->createAskResourceOwnerForApprovalResponse(
             ResponseTypes::IMPLICIT,
             $client,
@@ -327,10 +307,8 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         return $response;
     }
 
-    /** @noinspection PhpTooManyParametersInspection
+    /**
      * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function passValidateCredentialsAndCreateAccessTokenResponse(
         string $userName,
@@ -339,8 +317,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         bool $isScopeModified = false,
         array $scope = null,
         array $extraParameters = []
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         assert($client !== null);
 
         if (($userIdentifier = $this->getIntegration()->validateUserId($userName, $password)) === null) {
@@ -354,7 +331,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         if ($changedScopeOrNull !== null) {
             assert(is_array($changedScopeOrNull));
             $isScopeModified = true;
-            $scope           = $changedScopeOrNull;
+            $scope = $changedScopeOrNull;
         }
 
         $unsavedToken = $this->getIntegration()->createTokenInstance();
@@ -365,11 +342,9 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         $isScopeModified === true ? $unsavedToken->setScopeModified() : $unsavedToken->setScopeUnmodified();
 
         $tokenExpiresIn = $this->setUpTokenValues($unsavedToken);
-        $savedToken     = $this->getIntegration()->getTokenRepository()->createToken($unsavedToken);
+        $savedToken = $this->getIntegration()->getTokenRepository()->createToken($unsavedToken);
 
-        $response = $this->createBodyTokenResponse($savedToken, $tokenExpiresIn);
-
-        return $response;
+        return $this->createBodyTokenResponse($savedToken, $tokenExpiresIn);
     }
 
     /**
@@ -379,7 +354,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
     {
         $defaultClientId = $this->getIntegration()->getDefaultClientIdentifier();
 
-        assert(is_string($defaultClientId) === true && empty($defaultClientId) === false);
+        assert(empty($defaultClientId) === false);
 
         $defaultClient = $this->readClientByIdentifier($defaultClientId);
 
@@ -396,10 +371,8 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         bool $isScopeModified,
         array $scope = null,
         array $extraParameters = []
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $this->logDebug('Prepare token for client.');
-        assert($client !== null);
 
         $unsavedToken = $this->getIntegration()->createTokenInstance();
         $unsavedToken
@@ -409,11 +382,9 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
 
         $tokenExpiresIn = $this->setUpTokenValue($unsavedToken);
-        $savedToken     = $this->getIntegration()->getTokenRepository()->createToken($unsavedToken);
+        $savedToken = $this->getIntegration()->getTokenRepository()->createToken($unsavedToken);
 
-        $response = $this->createBodyTokenResponse($savedToken, $tokenExpiresIn);
-
-        return $response;
+        return $this->createBodyTokenResponse($savedToken, $tokenExpiresIn);
     }
 
     /**
@@ -431,8 +402,6 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
     /**
      * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.ElseExpression)
      */
     public function refreshCreateAccessTokenResponse(
         ClientInterface $client,
@@ -440,14 +409,13 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         bool $isScopeModified,
         array $scope = null,
         array $extraParameters = []
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $this->logDebug('Prepare refresh token.');
 
         /** @var TokenInterface $token */
         assert($token instanceof TokenInterface);
 
-        $updatedToken   = clone $token;
+        $updatedToken = clone $token;
         $tokenExpiresIn = $this->getIntegration()->isRenewRefreshValue() === false ?
             $this->setUpTokenValue($updatedToken) : $this->setUpTokenValues($updatedToken);
 
@@ -458,14 +426,12 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
             assert(is_array($scope));
             $tokenRepo->inTransaction(function () use ($tokenRepo, $updatedToken, $scope) {
                 $tokenRepo->updateValues($updatedToken);
-                $tokenRepo->unbindScopes($updatedToken->getIdentifier());
-                $tokenRepo->bindScopeIdentifiers($updatedToken->getIdentifier(), $scope);
+                $tokenRepo->unbindScopes($updatedToken->getIdentity());
+                $tokenRepo->bindScopeIdentifiers($updatedToken->getIdentity(), $scope);
             });
             $updatedToken->setScopeModified()->setScopeIdentifiers($scope);
         }
-        $response = $this->createBodyTokenResponse($updatedToken, $tokenExpiresIn);
-
-        return $response;
+        return $this->createBodyTokenResponse($updatedToken, $tokenExpiresIn);
     }
 
     /**
@@ -481,12 +447,10 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
      * @param string|null $redirectFromQuery
      *
      * @return array [client|null, uri|null]
-     *
-     * @SuppressWarnings(PHPMD.ElseExpression)
      */
     protected function getValidClientAndRedirectUri(string $clientId = null, string $redirectFromQuery = null): array
     {
-        $client           = null;
+        $client = null;
         $validRedirectUri = null;
 
         if ($clientId !== null &&
@@ -508,7 +472,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
     /**
      * @param TokenInterface $token
-     * @param int            $tokenExpiresIn
+     * @param int $tokenExpiresIn
      *
      * @return ResponseInterface
      */
@@ -521,11 +485,11 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
         // for access token format @link https://tools.ietf.org/html/rfc6749#section-5.1
         $parameters = $this->filterNulls([
-            'access_token'  => $token->getValue(),
-            'token_type'    => $token->getType(),
-            'expires_in'    => $tokenExpiresIn,
+            'access_token' => $token->getValue(),
+            'token_type' => $token->getType(),
+            'expires_in' => $tokenExpiresIn,
             'refresh_token' => $token->getRefreshValue(),
-            'scope'         => $scopeList,
+            'scope' => $scopeList,
         ]);
 
         // extra parameters
@@ -534,17 +498,15 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         // https://tools.ietf.org/html/rfc6749#section-4.4.3
         $extraParameters = $this->getIntegration()->getBodyTokenExtraParameters($token);
 
-        $response = new JsonResponse($parameters + $extraParameters, 200, [
+        return new JsonResponse($parameters + $extraParameters, 200, [
             'Cache-Control' => 'no-store',
-            'Pragma'        => 'no-cache'
+            'Pragma' => 'no-cache'
         ]);
-
-        return $response;
     }
 
     /**
      * @param TokenInterface $code
-     * @param string|null    $state
+     * @param string|null $state
      *
      * @return ResponseInterface
      */
@@ -554,22 +516,20 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
         // for access token format @link https://tools.ietf.org/html/rfc6749#section-4.1.3
         $parameters = $this->filterNulls([
-            'code'  => $code->getCode(),
+            'code' => $code->getCode(),
             'state' => $state,
         ]);
 
         $redirectUri = $code->getRedirectUriString();
-        $query       = $this->encodeAsXWwwFormUrlencoded($parameters);
+        $query = $this->encodeAsXWwwFormUrlencoded($parameters);
 
-        $response = new RedirectResponse((new Uri($redirectUri))->withQuery($query));
-
-        return $response;
+        return new RedirectResponse((new Uri($redirectUri))->withQuery($query));
     }
 
     /**
      * @param TokenInterface $token
-     * @param int            $tokenExpiresIn
-     * @param string|null    $state
+     * @param int $tokenExpiresIn
+     * @param string|null $state
      *
      * @return ResponseInterface
      */
@@ -577,8 +537,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         TokenInterface $token,
         int $tokenExpiresIn,
         string $state = null
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $this->logDebug('Sending token as redirect response.');
 
         $scopeList = $token->isScopeModified() === false || empty($token->getScopeIdentifiers()) === true ?
@@ -587,17 +546,15 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
         // for access token format @link https://tools.ietf.org/html/rfc6749#section-5.1
         $parameters = $this->filterNulls([
             'access_token' => $token->getValue(),
-            'token_type'   => $token->getType(),
-            'expires_in'   => $tokenExpiresIn,
-            'scope'        => $scopeList,
-            'state'        => $state,
+            'token_type' => $token->getType(),
+            'expires_in' => $tokenExpiresIn,
+            'scope' => $scopeList,
+            'state' => $state,
         ]);
 
         $fragment = $this->encodeAsXWwwFormUrlencoded($parameters);
 
-        $response = new RedirectResponse((new Uri($token->getRedirectUriString()))->withFragment($fragment));
-
-        return $response;
+        return new RedirectResponse((new Uri($token->getRedirectUriString()))->withFragment($fragment));
     }
 
     /**
@@ -608,16 +565,14 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
     protected function createBodyErrorResponse(OAuthTokenBodyException $exception): ResponseInterface
     {
         $data = $this->filterNulls([
-            'error'             => $exception->getErrorCode(),
+            'error' => $exception->getErrorCode(),
             'error_description' => $exception->getErrorDescription(),
-            'error_uri'         => $this->getBodyErrorUri($exception),
+            'error_uri' => $this->getBodyErrorUri($exception),
         ]);
 
         $this->logDebug('Sending OAuth error as JSON response.', $data);
 
-        $response = new JsonResponse($data, $exception->getHttpCode(), $exception->getHttpHeaders());
-
-        return $response;
+        return new JsonResponse($data, $exception->getHttpCode(), $exception->getHttpHeaders());
     }
 
     /**
@@ -628,20 +583,18 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
     protected function createRedirectErrorResponse(OAuthRedirectException $exception): ResponseInterface
     {
         $parameters = $this->filterNulls([
-            'error'             => $exception->getErrorCode(),
+            'error' => $exception->getErrorCode(),
             'error_description' => $exception->getErrorDescription(),
-            'error_uri'         => $exception->getErrorUri(),
-            'state'             => $exception->getState(),
+            'error_uri' => $exception->getErrorUri(),
+            'state' => $exception->getState(),
         ]);
 
         $this->logDebug('Sending OAuth error via redirect.', $parameters);
 
         $fragment = $this->encodeAsXWwwFormUrlencoded($parameters);
-        $uri      = (new Uri($exception->getRedirectUri()))->withFragment($fragment);
+        $uri = (new Uri($exception->getRedirectUri()))->withFragment($fragment);
 
-        $response = new RedirectResponse($uri, 302, $exception->getHttpHeaders());
-
-        return $response;
+        return new RedirectResponse($uri, 302, $exception->getHttpHeaders());
     }
 
     /**
@@ -697,16 +650,14 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
      *
      * @return null|string
      */
-    protected function getBodyErrorUri(OAuthTokenBodyException $exception)
+    protected function getBodyErrorUri(OAuthTokenBodyException $exception): ?string
     {
-        assert($exception !== null);
-
-        return null;
+        return $exception->getErrorUri();
     }
 
     /**
      * @param string $message
-     * @param array  $context
+     * @param array $context
      *
      * @return void
      */
@@ -719,7 +670,7 @@ abstract class BasePassportServer extends BaseAuthorizationServer implements Pas
 
     /**
      * @param string $message
-     * @param array  $context
+     * @param array $context
      *
      * @return void
      */

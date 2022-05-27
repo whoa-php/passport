@@ -22,8 +22,8 @@ declare(strict_types=1);
 namespace Whoa\Tests\Passport\Repositories;
 
 use DateTimeImmutable;
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\ConnectionException;
+use Doctrine\DBAL\Connection as DBALConnection;
+use Doctrine\DBAL\ConnectionException as DBALConnectionException;
 use Doctrine\DBAL\Exception as DBALException;
 use Exception;
 use Whoa\Passport\Adaptors\Generic\Client;
@@ -38,6 +38,7 @@ use Whoa\Passport\Contracts\Repositories\ClientRepositoryInterface;
 use Whoa\Passport\Contracts\Repositories\RedirectUriRepositoryInterface;
 use Whoa\Passport\Contracts\Repositories\ScopeRepositoryInterface;
 use Whoa\Passport\Contracts\Repositories\TokenRepositoryInterface;
+use Whoa\Passport\Exceptions\RepositoryException;
 use Whoa\Passport\Traits\DatabaseSchemaMigrationTrait;
 use Whoa\Tests\Passport\TestCase;
 use Mockery;
@@ -56,7 +57,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientIndex(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->index();
     }
@@ -66,7 +67,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientCreate(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->create(new Client());
     }
@@ -76,9 +77,9 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientBindScopeIdentifiers(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
-        $this->createClientRepository()->bindScopeIdentifiers('fakeClientId1', ['fakeScopeId1']);
+        $this->createClientRepository()->bindScopeIdentifiers('fakeClientId1', [1]);
     }
 
     /**
@@ -86,7 +87,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientUnbindScopeIdentifiers(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->unbindScopes('fakeClientId1');
     }
@@ -96,7 +97,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientRead(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->read('fakeClientId1');
     }
@@ -106,7 +107,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientReadScopeIdentifiers(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->readScopeIdentifiers('fakeClientId1');
     }
@@ -116,7 +117,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientReadRedirectUriStrings(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->readRedirectUriStrings('fakeClientId1');
     }
@@ -126,7 +127,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientUpdate(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->update(new Client());
     }
@@ -136,7 +137,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testClientDelete(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createClientRepository()->delete('fakeClientId1');
     }
@@ -146,7 +147,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testRedirectUriIndexClientUris(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createRedirectUriRepository()->indexClientUris('fakeClientId1');
     }
@@ -156,7 +157,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testRedirectUriCreate(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createRedirectUriRepository()->create(new RedirectUri());
     }
@@ -166,7 +167,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testRedirectUriRead(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createRedirectUriRepository()->read(1);
     }
@@ -176,7 +177,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testRedirectUriUpdate(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createRedirectUriRepository()->update(new RedirectUri());
     }
@@ -186,7 +187,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testRedirectUriDelete(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createRedirectUriRepository()->delete(1);
     }
@@ -196,7 +197,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testScopeIndex(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createScopeRepository()->index();
     }
@@ -206,7 +207,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testScopeCreate(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createScopeRepository()->create(new Scope());
     }
@@ -216,9 +217,9 @@ class BadDatabaseTest extends TestCase
      */
     public function testScopeRead(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
-        $this->createScopeRepository()->read('fakeScopeId');
+        $this->createScopeRepository()->read(1);
     }
 
     /**
@@ -226,7 +227,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testScopeUpdate(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createScopeRepository()->update(new Scope());
     }
@@ -236,9 +237,9 @@ class BadDatabaseTest extends TestCase
      */
     public function testScopeDelete(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
-        $this->createScopeRepository()->delete('fakeScopeId');
+        $this->createScopeRepository()->delete(1);
     }
 
     /**
@@ -246,7 +247,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenCreateCode(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->createCode((new Token())->setCode('fakeCode'));
     }
@@ -256,7 +257,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenAssignValuesToCode(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->assignValuesToCode((new Token())->setCode('fakeCode'), 123);
     }
@@ -266,7 +267,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenCreateToken(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->createToken(new Token());
     }
@@ -276,7 +277,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenBindScopeIdentifiers(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->bindScopeIdentifiers(1, ['fakeToken1']);
     }
@@ -286,7 +287,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenUnbindScopes(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->unbindScopes(1);
     }
@@ -296,7 +297,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenRead(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->read(1);
     }
@@ -306,7 +307,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenReadByCode(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->readByCode('fakeCode', 123);
     }
@@ -316,7 +317,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenReadByUser(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->readByUser(1, 123);
     }
@@ -326,7 +327,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenReadPassport(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->readPassport('fakeToken', 123);
     }
@@ -336,7 +337,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenReadScopeIdentifiers(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->readScopeIdentifiers(1);
     }
@@ -346,7 +347,7 @@ class BadDatabaseTest extends TestCase
      */
     public function testTokenUpdateValues(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
         $this->createTokenRepository()->updateValues(new Token());
     }
@@ -359,15 +360,15 @@ class BadDatabaseTest extends TestCase
      */
     public function testInTransactionAddCoverage(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
-        $connection = Mockery::mock(Connection::class);
+        $connection = Mockery::mock(DBALConnection::class);
         $connection->shouldReceive('beginTransaction')->once()->withNoArgs()->andReturnUndefined();
-        $connection->shouldReceive('commit')->once()->withNoArgs()->andThrow(new ConnectionException());
+        $connection->shouldReceive('commit')->once()->withNoArgs()->andThrow(new DBALConnectionException());
 
-        /** @var Connection $connection */
+        /** @var DBALConnection $connection */
 
-        $repo   = new ClientRepository($connection, $this->initDefaultDatabaseSchema());
+        $repo = new ClientRepository($connection, $this->initDefaultDatabaseSchema());
         $method = new ReflectionMethod(ClientRepository::class, 'inTransaction');
 
         $method->setAccessible(true);
@@ -384,14 +385,14 @@ class BadDatabaseTest extends TestCase
      */
     public function testGetDateTimeForDbAddCoverage(): void
     {
-        $this->expectException(\Whoa\Passport\Exceptions\RepositoryException::class);
+        $this->expectException(RepositoryException::class);
 
-        $connection = Mockery::mock(Connection::class);
+        $connection = Mockery::mock(DBALConnection::class);
         $connection->shouldReceive('getDatabasePlatform')->once()->withNoArgs()->andThrow(new DBALException());
 
-        /** @var Connection $connection */
+        /** @var DBALConnection $connection */
 
-        $repo   = new ClientRepository($connection, $this->initDefaultDatabaseSchema());
+        $repo = new ClientRepository($connection, $this->initDefaultDatabaseSchema());
         $method = new ReflectionMethod(ClientRepository::class, 'getDateTimeForDb');
 
         $method->setAccessible(true);
@@ -406,8 +407,8 @@ class BadDatabaseTest extends TestCase
      */
     public function testIgnoreExceptionAddCoverage(): void
     {
-        $repo    = $this->createClientRepository();
-        $method  = new ReflectionMethod(ClientRepository::class, 'ignoreException');
+        $repo = $this->createClientRepository();
+        $method = new ReflectionMethod(ClientRepository::class, 'ignoreException');
         $closure = function () {
             throw new Exception();
         };
@@ -452,9 +453,9 @@ class BadDatabaseTest extends TestCase
     }
 
     /**
-     * @return Connection
+     * @return DBALConnection
      */
-    private function initDummyConnection(): ?Connection
+    private function initDummyConnection(): ?DBALConnection
     {
         try {
             $this->setConnection($connection = static::createConnection());

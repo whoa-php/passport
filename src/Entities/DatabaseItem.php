@@ -28,6 +28,7 @@ use Whoa\Contracts\Data\UuidFields;
 use Whoa\Doctrine\Traits\UuidTypeTrait;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+
 use function property_exists;
 
 /**
@@ -45,17 +46,17 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
     /**
      * @var UuidInterface|null
      */
-    private $uuidField;
+    private ?UuidInterface $uuidField = null;
 
     /**
      * @var DateTimeInterface|null
      */
-    private $createdAtField;
+    private ?DateTimeInterface $createdAtField = null;
 
     /**
      * @var DateTimeInterface|null
      */
-    private $updatedAtField;
+    private ?DateTimeInterface $updatedAtField = null;
 
     /**
      * @return UuidInterface
@@ -76,7 +77,6 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
 
     /**
      * @param UuidInterface|string|null $uuid
-     *
      * @return $this
      */
     public function setUuidImpl($uuid = null): DatabaseItem
@@ -93,9 +93,9 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
     }
 
     /**
-     * @inheritdoc
+     * @return DateTimeInterface
      */
-    public function getCreatedAt(): ?DateTimeInterface
+    public function getCreatedAt(): DateTimeInterface
     {
         if ($this->createdAtField === null &&
             $this->hasDynamicProperty(static::FIELD_CREATED_AT) === true &&
@@ -108,7 +108,7 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
     }
 
     /**
-     * @inheritdoc
+     * @return DateTimeInterface|null
      */
     public function getUpdatedAt(): ?DateTimeInterface
     {
@@ -124,7 +124,6 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
 
     /**
      * @param DateTimeInterface $createdAt
-     *
      * @return DatabaseItem
      */
     protected function setCreatedAtImpl(DateTimeInterface $createdAt): DatabaseItem
@@ -136,7 +135,6 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
 
     /**
      * @param DateTimeInterface $updatedAt
-     *
      * @return DatabaseItem
      */
     protected function setUpdatedAtImpl(DateTimeInterface $updatedAt): DatabaseItem
@@ -148,10 +146,7 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
 
     /**
      * @param string $createdAt
-     *
      * @return DateTimeInterface
-     *
-     * @SuppressWarnings(PHPMD.StaticAccess)
      */
     protected function parseDateTime(string $createdAt): DateTimeInterface
     {
@@ -160,7 +155,6 @@ abstract class DatabaseItem implements UuidFields, TimestampFields
 
     /**
      * @param string $name
-     *
      * @return bool
      */
     protected function hasDynamicProperty(string $name): bool

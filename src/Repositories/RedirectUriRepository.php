@@ -23,38 +23,54 @@ namespace Whoa\Passport\Repositories;
 
 use DateTimeImmutable;
 use Doctrine\DBAL\Exception as DBALException;
+use Throwable;
+use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Contracts\Entities\RedirectUriInterface;
+use Whoa\Passport\Contracts\Repositories\ClientRepositoryInterface;
 use Whoa\Passport\Contracts\Repositories\RedirectUriRepositoryInterface;
 use Whoa\Passport\Exceptions\RepositoryException;
 use PDO;
+use Whoa\Passport\Traits\Repository\ClientRepositoryTrait;
 
 /**
  * @package Whoa\Passport
  */
 abstract class RedirectUriRepository extends BaseRepository implements RedirectUriRepositoryInterface
 {
+    use ClientRepositoryTrait;
+
+    /**
+     * Constructor
+     */
+    public function __construct(ClientRepositoryInterface $clientRepo)
+    {
+        $this->setClientRepository($clientRepo);
+    }
+
     /**
      * @inheritdoc
-     *
      * @throws RepositoryException
      */
     public function indexClientUris(string $clientIdentifier): array
     {
         try {
-            $query = $this->getConnection()->createQueryBuilder();
+            if (($clientIdValue = $this->getClientRepository()->queryIdentity($clientIdentifier)) !== null) {
+                $query = $this->getConnection()->createQueryBuilder();
 
-            $clientIdColumn = $this->getDatabaseSchema()->getRedirectUrisClientIdentityColumn();
-            $statement      = $query
-                ->select(['*'])
-                ->from($this->getTableNameForWriting())
-                ->where($clientIdColumn . '=' . $this->createTypedParameter($query, $clientIdentifier))
-                ->execute();
+                $clientIdColumn = $this->getDatabaseSchema()->getRedirectUrisClientIdentityColumn();
+                $statement = $query
+                    ->select(['*'])
+                    ->from($this->getTableNameForWriting())
+                    ->where($clientIdColumn . '=' . $this->createTypedParameter($query, (int)$clientIdValue))
+                    ->execute();
 
-            $statement->setFetchMode(PDO::FETCH_CLASS, $this->getClassName());
-            $result = $statement->fetchAll();
 
-            return $result;
-        } /** @noinspection PhpRedundantCatchClauseInspection */ catch (DBALException $exception) {
+                $statement->setFetchMode(PDO::FETCH_CLASS, $this->getClassName());
+                return $statement->fetchAll();
+            }
+
+            return [];
+        } catch (DBALException $exception) {
             $message = 'Reading client redirect URIs failed.';
             throw new RepositoryException($message, 0, $exception);
         }
@@ -62,25 +78,29 @@ abstract class RedirectUriRepository extends BaseRepository implements RedirectU
 
     /**
      * @inheritdoc
-     *
      * @throws RepositoryException
      */
     public function create(RedirectUriInterface $redirectUri): RedirectUriInterface
     {
         try {
-            $now    = $this->ignoreException(function (): DateTimeImmutable {
+            $now = $this->ignoreException(function (): DateTimeImmutable {
                 return new DateTimeImmutable();
             });
             $schema = $this->getDatabaseSchema();
-            $this->createResource([
-                $schema->getRedirectUrisClientIdentityColumn() => $redirectUri->getClientIdentifier(),
-                $schema->getRedirectUrisUuidColumn()           => $redirectUri->getUuid(),
-                $schema->getRedirectUrisValueColumn()          => $redirectUri->getValue(),
-                $schema->getRedirectUrisCreatedAtColumn()      => $now,
-            ]);
-            $identifier = $this->getLastInsertId();
+            $values = [
+                $schema->getRedirectUrisUuidColumn() => $redirectUri->getUuid(),
+                $schema->getRedirectUrisValueColumn() => $redirectUri->getValue(),
+                $schema->getRedirectUrisCreatedAtColumn() => $now,
+            ];
 
-            $redirectUri->setIdentifier($identifier)->setUuid()->setCreatedAt($now);
+            if (empty($value = $this->associateClientIdentity($redirectUri, $schema)) === false) {
+                $values += $value;
+            }
+
+            $this->createResource($values);
+            $identity = $this->getLastInsertId();
+
+            $redirectUri->setIdentity($identity)->setUuid()->setCreatedAt($now);
 
             return $redirectUri;
         } catch (RepositoryException $exception) {
@@ -91,13 +111,12 @@ abstract class RedirectUriRepository extends BaseRepository implements RedirectU
 
     /**
      * @inheritdoc
-     *
      * @throws RepositoryException
      */
-    public function read(int $identifier): RedirectUriInterface
+    public function read(int $identity): ?RedirectUriInterface
     {
         try {
-            return $this->readResource($identifier);
+            return $this->readResource($identity);
         } catch (RepositoryException $exception) {
             $message = 'Reading client redirect URIs failed.';
             throw new RepositoryException($message, 0, $exception);
@@ -112,15 +131,21 @@ abstract class RedirectUriRepository extends BaseRepository implements RedirectU
     public function update(RedirectUriInterface $redirectUri): void
     {
         try {
-            $now    = $this->ignoreException(function (): DateTimeImmutable {
+            $now = $this->ignoreException(function (): DateTimeImmutable {
                 return new DateTimeImmutable();
             });
             $schema = $this->getDatabaseSchema();
-            $this->updateResource($redirectUri->getIdentifier(), [
-                $schema->getRedirectUrisClientIdentityColumn() => $redirectUri->getClientIdentifier(),
-                $schema->getRedirectUrisValueColumn()          => $redirectUri->getValue(),
-                $schema->getRedirectUrisUpdatedAtColumn()      => $now,
-            ]);
+            $values = [
+                $schema->getRedirectUrisValueColumn() => $redirectUri->getValue(),
+                $schema->getRedirectUrisUpdatedAtColumn() => $now,
+            ];
+
+            if (empty($value = $this->associateClientIdentity($redirectUri, $schema)) === false) {
+                $values += $value;
+            }
+
+            $this->updateResource($redirectUri->getIdentity(), $values);
+
             $redirectUri->setUpdatedAt($now);
         } catch (RepositoryException $exception) {
             $message = 'Client redirect URI update failed.';
@@ -157,5 +182,47 @@ abstract class RedirectUriRepository extends BaseRepository implements RedirectU
     protected function getPrimaryKeyName(): string
     {
         return $this->getDatabaseSchema()->getRedirectUrisIdentityColumn();
+    }
+
+    /**
+     * @param RedirectUriInterface $redirectUri
+     * @param DatabaseSchemaInterface $databaseSchema
+     * @return array
+     */
+    protected function associateClientIdentity(
+        RedirectUriInterface $redirectUri,
+        DatabaseSchemaInterface $databaseSchema
+    ): array {
+        try {
+            assert(($clientIdentifier = $redirectUri->getClientIdentifier()) != null);
+            if (($clientIdentity = $this->getClientRepository()->queryIdentity($clientIdentifier)) !== null) {
+                $redirectUri->setClientIdentity($clientIdentity);
+                return [$databaseSchema->getRedirectUrisClientIdentityColumn() => $redirectUri->getClientIdentity()];
+            }
+
+            return [];
+        } catch (Throwable $throwable) {
+            $message = 'Associate client identity failed.';
+            throw new RepositoryException($message, 0, $throwable);
+        }
+    }
+
+    /**
+     * @param RedirectUriInterface $redirectUri
+     * @return void
+     */
+    protected function associateClientIdentifier(RedirectUriInterface $redirectUri): void
+    {
+        try {
+            assert(($clientIdentity = $redirectUri->getClientIdentity()) !== 0);
+            if (($clientIdentifier = $this->getClientRepository()->queryIdentifier(
+                    $clientIdentity
+                )) !== null) {
+                $redirectUri->setClientIdentifier($clientIdentifier);
+            }
+        } catch (Throwable $throwable) {
+            $message = 'Associate client identifier failed.';
+            throw new RepositoryException($message, 0, $throwable);
+        }
     }
 }

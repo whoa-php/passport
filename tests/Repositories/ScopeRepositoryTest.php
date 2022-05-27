@@ -22,7 +22,9 @@ declare(strict_types=1);
 namespace Whoa\Tests\Passport\Repositories;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\Types\Type;
 use Exception;
+use Whoa\Doctrine\Types\UuidType as WhoaUuidType;
 use Whoa\Passport\Adaptors\Generic\Scope;
 use Whoa\Passport\Adaptors\Generic\ScopeRepository;
 use Whoa\Passport\Contracts\Entities\ScopeInterface;
@@ -39,19 +41,19 @@ class ScopeRepositoryTest extends TestCase
 
     /**
      * @inheritdoc
-     *
      * @throws Exception
      */
     protected function setUp(): void
     {
         parent::setUp();
 
+        Type::hasType(WhoaUuidType::NAME) === true ?: Type::addType(WhoaUuidType::NAME, WhoaUuidType::class);
+
         $this->initDatabase();
     }
 
     /**
      * Test basic CRUD.
-     *
      * @throws Exception
      */
     public function testCrud()
@@ -60,23 +62,28 @@ class ScopeRepositoryTest extends TestCase
 
         $this->assertEmpty($repo->index());
 
-        $repo->create((new Scope())->setIdentifier('abc')->setDescription('desc'));
+        $repo->create(
+            (new Scope())
+                ->setIdentifier('default_scope_1')
+                ->setName('Default scope 1')
+                ->setDescription('Description for default scope 1')
+        );
 
         $this->assertNotEmpty($scopes = $repo->index());
         $this->assertCount(1, $scopes);
         /** @var Scope $scope */
         $scope = $scopes[0];
         $this->assertTrue($scope instanceof ScopeInterface);
-        $this->assertEquals('abc', $scope->getIdentifier());
-        $this->assertEquals('desc', $scope->getDescription());
+        $this->assertEquals(1, $scope->getIdentity());
+        $this->assertEquals('default_scope_1', $scope->getIdentifier());
+        $this->assertEquals('Default scope 1', $scope->getName());
+        $this->assertEquals('Description for default scope 1', $scope->getDescription());
         $this->assertTrue($scope->getCreatedAt() instanceof DateTimeImmutable);
         $this->assertNull($scope->getUpdatedAt());
 
         $scope->setDescription(null);
-
         $repo->update($scope);
         $sameScope = $repo->read($scope->getIdentifier());
-        $this->assertEquals('abc', $sameScope->getIdentifier());
         $this->assertNull($sameScope->getDescription());
         $this->assertTrue($sameScope->getCreatedAt() instanceof DateTimeImmutable);
         $this->assertTrue($sameScope->getUpdatedAt() instanceof DateTimeImmutable);
@@ -91,8 +98,6 @@ class ScopeRepositoryTest extends TestCase
      */
     private function createRepository(): ScopeRepositoryInterface
     {
-        $repo = new ScopeRepository($this->getConnection(), $this->getDatabaseSchema());
-
-        return $repo;
+        return new ScopeRepository($this->getConnection(), $this->getDatabaseSchema());
     }
 }

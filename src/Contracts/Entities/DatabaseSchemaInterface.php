@@ -58,6 +58,11 @@ interface DatabaseSchemaInterface
     /**
      * @return string
      */
+    public function getClientsIdentifierColumn(): string;
+
+    /**
+     * @return string
+     */
     public function getClientsUuidColumn(): string;
 
     /**
@@ -132,12 +137,12 @@ interface DatabaseSchemaInterface
     /**
      * @return string
      */
-    public function getClientsScopesIdentityColumn(): string;
+    public function getClientsScopesTable(): string;
 
     /**
      * @return string
      */
-    public function getClientsScopesTable(): string;
+    public function getClientsScopesIdentityColumn(): string;
 
     /**
      * @return string
@@ -205,7 +210,17 @@ interface DatabaseSchemaInterface
     /**
      * @return string
      */
+    public function getScopesIdentifierColumn(): string;
+
+    /**
+     * @return string
+     */
     public function getScopesUuidColumn(): string;
+
+    /**
+     * @return string
+     */
+    public function getScopesNameColumn(): string;
 
     /**
      * @return string

@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace Whoa\Tests\Passport\Traits;
 
+use Laminas\Diactoros\ServerRequest;
+use Whoa\OAuthServer\Exceptions\OAuthTokenBodyException;
 use Whoa\Passport\Adaptors\MySql\Client;
 use Whoa\Passport\Contracts\PassportServerIntegrationInterface;
 use Whoa\Passport\Contracts\Repositories\ClientRepositoryInterface;
@@ -29,7 +31,6 @@ use Mockery;
 use Mockery\Mock;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
-use Zend\Diactoros\ServerRequest;
 
 /**
  * @package Whoa\Tests\Passport
@@ -60,7 +61,7 @@ class BasicClientAuthenticationTest extends TestCase
     {
         parent::setUp();
 
-        $this->integration    = $this->integrationMock = Mockery::mock(PassportServerIntegrationInterface::class);
+        $this->integration = $this->integrationMock = Mockery::mock(PassportServerIntegrationInterface::class);
         $this->clientRepoMock = Mockery::mock(ClientRepositoryInterface::class);
     }
 
@@ -79,7 +80,7 @@ class BasicClientAuthenticationTest extends TestCase
      */
     public function testNoAuthorizationHeader()
     {
-        $this->expectException(\Whoa\OAuthServer\Exceptions\OAuthTokenBodyException::class);
+        $this->expectException(OAuthTokenBodyException::class);
 
         $this->determineClient(
             $this->integration,
@@ -93,7 +94,7 @@ class BasicClientAuthenticationTest extends TestCase
      */
     public function testUnknownClientLogin()
     {
-        $this->expectException(\Whoa\OAuthServer\Exceptions\OAuthTokenBodyException::class);
+        $this->expectException(OAuthTokenBodyException::class);
 
         $this->integrationMock
             ->shouldReceive('getClientRepository')->once()->withNoArgs()->andReturn($this->clientRepoMock);
@@ -112,7 +113,7 @@ class BasicClientAuthenticationTest extends TestCase
      */
     public function testNotMatchingClientIdentifiers()
     {
-        $this->expectException(\Whoa\OAuthServer\Exceptions\OAuthTokenBodyException::class);
+        $this->expectException(OAuthTokenBodyException::class);
 
         $this->determineClient(
             $this->integration,
@@ -126,10 +127,10 @@ class BasicClientAuthenticationTest extends TestCase
      */
     public function testInvalidClientCredentials()
     {
-        $this->expectException(\Whoa\OAuthServer\Exceptions\OAuthTokenBodyException::class);
+        $this->expectException(OAuthTokenBodyException::class);
 
         $credentials = 'whatever';
-        $password    = 'some_password';
+        $password = 'some_password';
 
         $client = (new Client())
             ->setCredentials($credentials);
@@ -153,7 +154,7 @@ class BasicClientAuthenticationTest extends TestCase
      */
     public function testNoClientPassword()
     {
-        $this->expectException(\Whoa\OAuthServer\Exceptions\OAuthTokenBodyException::class);
+        $this->expectException(OAuthTokenBodyException::class);
 
         $credentials = 'whatever';
 
@@ -190,9 +191,8 @@ class BasicClientAuthenticationTest extends TestCase
     }
 
     /**
-     * @param string      $login
+     * @param string $login
      * @param string|null $password
-     *
      * @return ServerRequestInterface
      */
     private function createClientAuthRequest(string $login, string $password = null): ServerRequestInterface
@@ -213,7 +213,6 @@ class BasicClientAuthenticationTest extends TestCase
 
     /**
      * @param string $clientId
-     *
      * @return array
      */
     private function createClientIdParam(string $clientId): array

@@ -30,13 +30,23 @@ use Ramsey\Uuid\UuidInterface;
 interface ScopeInterface
 {
     /**
-     * @return string|null
+     * @return int
      */
-    public function getIdentifier(): ?string;
+    public function getIdentity(): int;
+
+    /**
+     * @param int $identity
+     * @return ScopeInterface
+     */
+    public function setIdentity(int $identity): ScopeInterface;
+
+    /**
+     * @return string
+     */
+    public function getIdentifier(): string;
 
     /**
      * @param string $identifier
-     *
      * @return ScopeInterface
      */
     public function setIdentifier(string $identifier): ScopeInterface;
@@ -48,10 +58,20 @@ interface ScopeInterface
 
     /**
      * @param UuidInterface|string|null $uuid
-     *
      * @return ScopeInterface
      */
     public function setUuid($uuid = null): ScopeInterface;
+
+    /**
+     * @return string|null
+     */
+    public function getName(): ?string;
+
+    /**
+     * @param string|null $name
+     * @return ScopeInterface
+     */
+    public function setName(?string $name = null): ScopeInterface;
 
     /**
      * @return string|null
@@ -60,22 +80,20 @@ interface ScopeInterface
 
     /**
      * @param string|null $description
-     *
      * @return ScopeInterface
      */
-    public function setDescription(string $description = null): ScopeInterface;
+    public function setDescription(?string $description = null): ScopeInterface;
 
     /**
-     * @return DateTimeInterface|null
+     * @return DateTimeInterface
      */
-    public function getCreatedAt(): ?DateTimeInterface;
+    public function getCreatedAt(): DateTimeInterface;
 
     /**
-     * @param DateTimeInterface $createdAt
-     *
+     * @param DateTimeInterface|null $createdAt
      * @return ScopeInterface
      */
-    public function setCreatedAt(DateTimeInterface $createdAt): ScopeInterface;
+    public function setCreatedAt(?DateTimeInterface $createdAt = null): ScopeInterface;
 
     /**
      * @return DateTimeInterface|null
@@ -83,9 +101,8 @@ interface ScopeInterface
     public function getUpdatedAt(): ?DateTimeInterface;
 
     /**
-     * @param DateTimeInterface $createdAt
-     *
+     * @param DateTimeInterface|null $createdAt
      * @return ScopeInterface
      */
-    public function setUpdatedAt(DateTimeInterface $createdAt): ScopeInterface;
+    public function setUpdatedAt(?DateTimeInterface $createdAt = null): ScopeInterface;
 }

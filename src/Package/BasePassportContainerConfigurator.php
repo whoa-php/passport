@@ -21,9 +21,12 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Package;
 
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Contracts\Authentication\AccountManagerInterface;
 use Whoa\Contracts\Container\ContainerInterface as WhoaContainerInterface;
 use Whoa\Contracts\Passport\PassportAccountManagerInterface;
+use Whoa\Contracts\Settings\Packages\PassportSettingsInterface;
 use Whoa\Contracts\Settings\SettingsProviderInterface;
 use Whoa\Passport\Authentication\AccountManager;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
@@ -37,18 +40,17 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @package Whoa\Passport
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 abstract class BasePassportContainerConfigurator
 {
     /**
-     * @inheritdoc
+     * @param WhoaContainerInterface $container
+     * @return void
      */
     protected static function baseConfigureContainer(WhoaContainerInterface $container): void
     {
-        $accountManager                                    = null;
-        $factory                                           = function (
+        $accountManager = null;
+        $factory = function (
             PsrContainerInterface $container
         ) use (&$accountManager): PassportAccountManagerInterface {
             if ($accountManager === null) {
@@ -60,7 +62,7 @@ abstract class BasePassportContainerConfigurator
 
             return $accountManager;
         };
-        $container[AccountManagerInterface::class]         = $factory;
+        $container[AccountManagerInterface::class] = $factory;
         $container[PassportAccountManagerInterface::class] = $factory;
 
         $container[DatabaseSchemaInterface::class] = function (
@@ -68,13 +70,16 @@ abstract class BasePassportContainerConfigurator
         ): DatabaseSchemaInterface {
             $settings = $container->get(SettingsProviderInterface::class)->get(C::class);
 
-            return new DatabaseSchema($settings[C::KEY_USER_TABLE_NAME], $settings[C::KEY_USER_PRIMARY_KEY_NAME]);
+            return new DatabaseSchema(
+                $settings[PassportSettingsInterface::KEY_USER_TABLE_NAME],
+                $settings[PassportSettingsInterface::KEY_USER_PRIMARY_KEY_NAME]
+            );
         };
 
         $container[PassportServerInterface::class] = function (
             PsrContainerInterface $container
         ): PassportServerInterface {
-            $integration    = $container->get(PassportServerIntegrationInterface::class);
+            $integration = $container->get(PassportServerIntegrationInterface::class);
             $passportServer = new PassportServer($integration);
 
             if (($logger = static::getLoggerIfEnabled($container)) !== null) {
@@ -89,12 +94,16 @@ abstract class BasePassportContainerConfigurator
      * @param PsrContainerInterface $container
      *
      * @return null|LoggerInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected static function getLoggerIfEnabled(PsrContainerInterface $container): ?LoggerInterface
     {
-        $logger   = null;
+        $logger = null;
         $settings = $container->get(SettingsProviderInterface::class)->get(C::class);
-        if ($settings[C::KEY_IS_LOG_ENABLED] === true && $container->has(LoggerInterface::class) === true) {
+        if ($settings[PassportSettingsInterface::KEY_IS_LOG_ENABLED] === true && $container->has(
+                LoggerInterface::class
+            ) === true) {
             $logger = $container->get(LoggerInterface::class);
         }
 

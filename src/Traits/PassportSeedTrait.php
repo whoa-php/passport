@@ -33,28 +33,27 @@ trait PassportSeedTrait
 {
     /**
      * @param PassportServerIntegrationInterface $integration
-     * @param ClientInterface                    $client
-     * @param array                              $scopeDescriptions
-     * @param string[]                           $redirectUris
-     *
+     * @param ClientInterface $client
+     * @param array $extraScopes
+     * @param string[] $redirectUris
      * @return void
      */
     protected function seedClient(
         PassportServerIntegrationInterface $integration,
         ClientInterface $client,
-        array $scopeDescriptions,
+        array $extraScopes,
         array $redirectUris = []
-    ): void
-    {
-        $scopeIds  = $client->getScopeIdentifiers();
+    ): void {
+        $scopeIds = $client->getScopeIdentifiers();
         $scopeRepo = $integration->getScopeRepository();
-        foreach ($scopeDescriptions as $scopeId => $scopeDescription) {
-            $scopeRepo->create(
+        foreach ($extraScopes as $scopeName => $scopeDescription) {
+            $scope = $scopeRepo->create(
                 (new Scope())
-                    ->setIdentifier($scopeId)
+                    ->setIdentifier($scopeName)
+                    ->setName($scopeName)
                     ->setDescription($scopeDescription)
             );
-            $scopeIds[] = $scopeId;
+            $scopeIds[] = $scope->getIdentifier();
         }
 
         $integration->getClientRepository()->create($client->setScopeIdentifiers($scopeIds));

@@ -22,7 +22,9 @@ declare(strict_types=1);
 namespace Whoa\Tests\Passport\Repositories;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\Types\Type;
 use Exception;
+use Whoa\Doctrine\Types\UuidType as WhoaUuidType;
 use Whoa\Passport\Adaptors\Generic\Client;
 use Whoa\Passport\Adaptors\Generic\ClientRepository;
 use Whoa\Passport\Adaptors\Generic\RedirectUri;
@@ -43,19 +45,19 @@ class RedirectUriRepositoryTest extends TestCase
 
     /**
      * @inheritdoc
-     *
      * @throws Exception
      */
     protected function setUp(): void
     {
         parent::setUp();
 
+        Type::hasType(WhoaUuidType::NAME) === true ?: Type::addType(WhoaUuidType::NAME, WhoaUuidType::class);
+
         $this->initDatabase();
     }
 
     /**
      * Test basic CRUD.
-     *
      * @throws Exception
      */
     public function testCrud()
@@ -65,43 +67,44 @@ class RedirectUriRepositoryTest extends TestCase
         [$clientRepo, $uriRepo] = $this->createRepositories();
 
         $clientRepo->create(
-            $client = (new Client())->setIdentifier('client1')->setName('client name')
+            $client = (new Client())->setIdentifier('default_client_1')
+                ->setName('Default Client 1')
+                ->setDescription('Description for default client 1')
         );
 
-        $clientId = $client->getIdentifier();
-        $this->assertEmpty($uriRepo->indexClientUris($clientId));
+        $clientIdentifier = $client->getIdentifier();
+        $this->assertEmpty($uriRepo->indexClientUris($clientIdentifier));
 
         $uriId = $uriRepo->create(
             (new RedirectUri())
-                ->setClientIdentifier($clientId)
+                ->setClientIdentifier($clientIdentifier)
                 ->setValue('https://example.foo/boo')
-        )->getIdentifier();
+        )->getIdentity();
 
-        $this->assertNotEmpty($uris = $uriRepo->indexClientUris($clientId));
+        $this->assertNotEmpty($uris = $uriRepo->indexClientUris($clientIdentifier));
         $this->assertCount(1, $uris);
         /** @var RedirectUri $uri */
         $uri = $uris[0];
         $this->assertTrue($uri instanceof RedirectUriInterface);
-        $this->assertEquals($uriId, $uri->getIdentifier());
-        $this->assertEquals($clientId, $uri->getClientIdentifier());
+        $this->assertEquals($uriId, $uri->getIdentity());
+        $this->assertEquals($clientIdentifier, $uri->getClientIdentifier());
         $this->assertEquals('https://example.foo/boo', $uri->getValue());
         $this->assertTrue($uri->getCreatedAt() instanceof DateTimeImmutable);
         $this->assertNull($uri->getUpdatedAt());
 
         $uriRepo->update($uri);
-        $sameRedirectUri = $uriRepo->read($uri->getIdentifier());
-        $this->assertEquals($uriId, $sameRedirectUri->getIdentifier());
+        $sameRedirectUri = $uriRepo->read($uri->getIdentity());
+        $this->assertEquals($uriId, $sameRedirectUri->getIdentity());
         $this->assertTrue($sameRedirectUri->getCreatedAt() instanceof DateTimeImmutable);
         $this->assertTrue($sameRedirectUri->getUpdatedAt() instanceof DateTimeImmutable);
 
-        $uriRepo->delete($sameRedirectUri->getIdentifier());
+        $uriRepo->delete($sameRedirectUri->getIdentity());
 
-        $this->assertEmpty($uriRepo->indexClientUris($clientId));
+        $this->assertEmpty($uriRepo->indexClientUris($clientIdentifier));
     }
 
     /**
      * Test entities get/set methods.
-     *
      * @throws Exception
      */
     public function testEntities()
@@ -122,7 +125,7 @@ class RedirectUriRepositoryTest extends TestCase
     private function createRepositories(): array
     {
         $clientRepository = new ClientRepository($this->getConnection(), $this->getDatabaseSchema());
-        $uriRepository    = new RedirectUriRepository($this->getConnection(), $this->getDatabaseSchema());
+        $uriRepository = new RedirectUriRepository($this->getConnection(), $this->getDatabaseSchema());
 
         return [$clientRepository, $uriRepository];
     }

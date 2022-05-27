@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Authentication;
 
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Contracts\Authentication\AccountInterface;
 use Whoa\Contracts\Authentication\AccountManagerInterface;
 use Whoa\Contracts\Passport\PassportAccountInterface;
@@ -32,7 +34,6 @@ use Whoa\Passport\Exceptions\AuthenticationException;
 use Psr\Container\ContainerInterface;
 use Whoa\Passport\Package\PassportSettings as S;
 use Psr\Log\LoggerAwareTrait;
-use function assert;
 
 /**
  * @package Whoa\Passport
@@ -44,12 +45,12 @@ class AccountManager implements PassportAccountManagerInterface
     /**
      * @var ContainerInterface
      */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * @var null|PassportAccountInterface
      */
-    private $account = null;
+    private ?PassportAccountInterface $account = null;
 
     /**
      * @param ContainerInterface $container
@@ -80,8 +81,6 @@ class AccountManager implements PassportAccountManagerInterface
      */
     public function setAccount(AccountInterface $account): AccountManagerInterface
     {
-        assert($account instanceof PassportAccountInterface);
-
         $this->account = $account;
 
         return $this;
@@ -89,19 +88,22 @@ class AccountManager implements PassportAccountManagerInterface
 
     /**
      * @inheritdoc
+     *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function setAccountWithTokenValue(string $value): PassportAccountInterface
     {
         /** @var TokenRepositoryInterface $tokenRepo */
-        $tokenRepo    = $this->getContainer()->get(TokenRepositoryInterface::class);
+        $tokenRepo = $this->getContainer()->get(TokenRepositoryInterface::class);
         $expInSeconds = $this->getPassportSettings()[S::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS];
-        $properties   = $tokenRepo->readPassport($value, $expInSeconds);
+        $properties = $tokenRepo->readPassport($value, $expInSeconds);
         if ($properties === null) {
             throw new AuthenticationException();
         }
 
         /** @var DatabaseSchemaInterface $schema */
-        $schema  = $this->getContainer()->get(DatabaseSchemaInterface::class);
+        $schema = $this->getContainer()->get(DatabaseSchemaInterface::class);
         $account = new PassportAccount($schema, $properties);
         $this->setAccount($account);
 
@@ -120,11 +122,11 @@ class AccountManager implements PassportAccountManagerInterface
 
     /**
      * @return array
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getPassportSettings(): array
     {
-        $settings = $this->getContainer()->get(SettingsProviderInterface::class)->get(S::class);
-
-        return $settings;
+        return $this->getContainer()->get(SettingsProviderInterface::class)->get(S::class);
     }
 }

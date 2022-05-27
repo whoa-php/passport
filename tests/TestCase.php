@@ -27,6 +27,8 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
 use Dotenv\Dotenv;
 use Exception;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\Uri;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Entities\DatabaseSchema;
 use Whoa\Tests\Passport\Data\User;
@@ -36,15 +38,13 @@ use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use Zend\Diactoros\ServerRequestFactory;
-use Zend\Diactoros\Uri;
 
 /**
  * @package Whoa\Tests\Passport
  */
 abstract class TestCase extends \PHPUnit\Framework\TestCase
 {
-    const TEST_USERS_COLUMN_NAME = 'name';
+    public const TEST_USERS_COLUMN_NAME = 'name';
 
     /**
      * @var resource
@@ -57,7 +57,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
     private $logger;
 
     /**
-     * @param Connection              $connection
+     * @param Connection $connection
      * @param DatabaseSchemaInterface $schema
      *
      * @return void
@@ -65,7 +65,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
     abstract protected function createDatabaseSchema(Connection $connection, DatabaseSchemaInterface $schema): void;
 
     /**
-     * @param Connection              $connection
+     * @param Connection $connection
      * @param DatabaseSchemaInterface $schema
      *
      * @return void
@@ -75,7 +75,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
     /**
      * DBAL option.
      */
-    const ON_DELETE_CASCADE = ['onDelete' => 'CASCADE'];
+    public const ON_DELETE_CASCADE = ['onDelete' => 'CASCADE'];
 
     /**
      * @var Connection
@@ -97,7 +97,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         parent::setUp();
 
         $this->logStream = fopen('php://memory', 'rw');
-        $this->logger    = new Logger('passport', [new StreamHandler($this->getLogStream())]);
+        $this->logger = new Logger('passport', [new StreamHandler($this->getLogStream())]);
     }
 
     /**
@@ -109,7 +109,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         if ($this->getConnection() !== null && $this->getDatabaseSchema() !== null) {
             $this->removeDatabaseSchema($this->getConnection(), $this->getDatabaseSchema());
             $this->getConnection()->close();
-            $this->connection     = null;
+            $this->connection = null;
             $this->databaseSchema = null;
         }
 
@@ -117,7 +117,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
 
         fclose($this->getLogStream());
         $this->logStream = null;
-        $this->logger    = null;
+        $this->logger = null;
     }
 
     /**
@@ -142,7 +142,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         $this->getConnection()->getSchemaManager()->dropAndCreateTable($table);
 
         $this->getConnection()->insert($schema->getUsersTable(), [
-            $schema->getUsersIdentityColumn()          => PassportServerTest::TEST_USER_ID,
+            $schema->getUsersIdentityColumn() => PassportServerTest::TEST_USER_ID,
             PassportServerTest::TEST_USERS_COLUMN_NAME => PassportServerTest::TEST_USER_NAME,
         ]);
 
@@ -192,13 +192,13 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
     {
         (new Dotenv(__DIR__ . DIRECTORY_SEPARATOR))->load();
         $connection = DriverManager::getConnection([
-            'driver'   => getenv('DB_MY_SQL_DRIVER'),
-            'host'     => getenv('DB_MY_SQL_HOST'),
-            'port'     => getenv('DB_MY_SQL_PORT'),
-            'dbname'   => getenv('DB_MY_SQL_DATABASE'),
-            'user'     => getenv('DB_MY_SQL_USER_NAME'),
+            'driver' => getenv('DB_MY_SQL_DRIVER'),
+            'host' => getenv('DB_MY_SQL_HOST'),
+            'port' => getenv('DB_MY_SQL_PORT'),
+            'dbname' => getenv('DB_MY_SQL_DATABASE'),
+            'user' => getenv('DB_MY_SQL_USER_NAME'),
             'password' => getenv('DB_MY_SQL_PASSWORD'),
-            'charset'  => getenv('DB_MY_SQL_CHARSET'),
+            'charset' => getenv('DB_MY_SQL_CHARSET'),
         ]);
 
         return $connection;
@@ -213,13 +213,13 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
     {
         (new Dotenv(__DIR__ . DIRECTORY_SEPARATOR))->load();
         $connection = DriverManager::getConnection([
-            'driver'   => getenv('DB_POSTGRESQL_DRIVER'),
-            'host'     => getenv('DB_POSTGRESQL_HOST'),
-            'port'     => getenv('DB_POSTGRESQL_PORT'),
-            'dbname'   => getenv('DB_POSTGRESQL_DATABASE'),
-            'user'     => getenv('DB_POSTGRESQL_USER_NAME'),
+            'driver' => getenv('DB_POSTGRESQL_DRIVER'),
+            'host' => getenv('DB_POSTGRESQL_HOST'),
+            'port' => getenv('DB_POSTGRESQL_PORT'),
+            'dbname' => getenv('DB_POSTGRESQL_DATABASE'),
+            'user' => getenv('DB_POSTGRESQL_USER_NAME'),
             'password' => getenv('DB_POSTGRESQL_PASSWORD'),
-            'charset'  => getenv('DB_POSTGRESQL_CHARSET'),
+            'charset' => getenv('DB_POSTGRESQL_CHARSET'),
         ]);
 
         return $connection;
@@ -296,15 +296,13 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
      * @param array|null $postData
      * @param array|null $queryParameters
      * @param array|null $headers
-     *
      * @return ServerRequestInterface
      */
     protected function createServerRequest(
         array $postData = null,
         array $queryParameters = null,
         array $headers = null
-    ): ServerRequestInterface
-    {
+    ): ServerRequestInterface {
         $removeNulls = function (array $values) {
             return array_filter($values, function ($value) {
                 return $value !== null;
@@ -312,8 +310,8 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         };
 
         $server = null;
-        $query  = null;
-        $body   = null;
+        $query = null;
+        $body = null;
 
         if ($headers !== null) {
             foreach ($removeNulls($headers) as $header => $value) {
@@ -329,16 +327,14 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
             $body = $removeNulls($postData);
         }
 
-        $request = ServerRequestFactory::fromGlobals($server, $query, $body);
-
-        return $request;
+        return ServerRequestFactory::fromGlobals($server, $query, $body);
     }
 
     /**
      * @param ResponseInterface $response
-     * @param int               $httpStatus
-     * @param array             $body
-     * @param string[]          $headers
+     * @param int $httpStatus
+     * @param array $body
+     * @param string[] $headers
      *
      * @return void
      *
@@ -349,12 +345,11 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         int $httpStatus,
         array $body,
         array $headers = []
-    )
-    {
+    ) {
         $headers += [
-            'Content-type'  => 'application/json',
+            'Content-type' => 'application/json',
             'Cache-Control' => 'no-store',
-            'Pragma'        => 'no-cache',
+            'Pragma' => 'no-cache',
         ];
 
         $this->assertEquals($httpStatus, $response->getStatusCode());
@@ -367,10 +362,10 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
 
     /**
      * @param ResponseInterface $response
-     * @param string            $redirectUri
-     * @param array             $expectedFragments
-     * @param int               $httpStatus
-     * @param string[]          $headers
+     * @param string $redirectUri
+     * @param array $expectedFragments
+     * @param int $httpStatus
+     * @param string[] $headers
      *
      * @return void
      *
@@ -382,8 +377,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         array $expectedFragments,
         int $httpStatus = 302,
         array $headers = []
-    )
-    {
+    ) {
         $this->assertEquals(302, $response->getStatusCode());
         $this->assertTrue($response->hasHeader('Location'));
         /** @noinspection PhpParamsInspection */

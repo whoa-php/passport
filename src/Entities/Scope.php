@@ -22,29 +22,45 @@ declare(strict_types=1);
 namespace Whoa\Passport\Entities;
 
 use DateTimeInterface;
-use Whoa\Passport\Contracts\Entities\ScopeInterface;
-use Whoa\Passport\Models\Scope as Model;
+use Whoa\Passport\Contracts\Entities\ScopeInterface as Entity;
+use Whoa\Passport\Contracts\Models\ScopeModelInterface as Model;
 
 /**
- * @package Whoa\Passport
+ * @package Whoa\Passportv
  */
-abstract class Scope extends DatabaseItem implements ScopeInterface
+abstract class Scope extends DatabaseItem implements Entity
 {
-    /** Field name */
-    const FIELD_ID = Model::FIELD_ID;
+    /** @var string Field name */
+    public const FIELD_ID = Model::FIELD_ID;
 
-    /** Field name */
-    const FIELD_DESCRIPTION = Model::FIELD_DESCRIPTION;
+    /** @var string Field name */
+    public const FIELD_IDENTIFIER = Model::FIELD_IDENTIFIER;
+
+    /** @var string Field name */
+    public const FIELD_NAME = Model::FIELD_NAME;
+
+    /** @var string Field name */
+    public const FIELD_DESCRIPTION = Model::FIELD_DESCRIPTION;
+
+    /**
+     * @var int
+     */
+    private int $identityField = 0;
+
+    /**
+     * @var string
+     */
+    private string $identifierField = '';
 
     /**
      * @var string|null
      */
-    private $identifierField;
+    private ?string $nameField = null;
 
     /**
      * @var string|null
      */
-    private $descriptionField;
+    private ?string $descriptionField = null;
 
     /**
      * Constructor.
@@ -52,16 +68,35 @@ abstract class Scope extends DatabaseItem implements ScopeInterface
     public function __construct()
     {
         if ($this->hasDynamicProperty(static::FIELD_ID) === true) {
-            $this
-                ->setIdentifier($this->{static::FIELD_ID})
+            $this->setIdentity((int)$this->{static::FIELD_ID})
+                ->setIdentifier($this->{static::FIELD_IDENTIFIER})
+                ->setName($this->{static::FIELD_NAME})
                 ->setDescription($this->{static::FIELD_DESCRIPTION});
         }
     }
 
     /**
+     * @inheritDoc
+     */
+    public function getIdentity(): int
+    {
+        return $this->identityField;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setIdentity(int $identity): Entity
+    {
+        $this->identityField = $identity;
+
+        return $this;
+    }
+
+    /**
      * @inheritdoc
      */
-    public function getIdentifier(): ?string
+    public function getIdentifier(): string
     {
         return $this->identifierField;
     }
@@ -69,7 +104,7 @@ abstract class Scope extends DatabaseItem implements ScopeInterface
     /**
      * @inheritdoc
      */
-    public function setIdentifier(string $identifier): ScopeInterface
+    public function setIdentifier(string $identifier): Entity
     {
         $this->identifierField = $identifier;
 
@@ -79,10 +114,28 @@ abstract class Scope extends DatabaseItem implements ScopeInterface
     /**
      * @inheritDoc
      */
-    public function setUuid($uuid = null): ScopeInterface
+    public function setUuid($uuid = null): Entity
     {
-        /** @var ScopeInterface $self */
+        /** @var Entity $self */
         $self = $this->setUuidImpl($uuid);
+
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getName(): ?string
+    {
+        return $this->nameField;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setName(?string $name = null): Entity
+    {
+        $this->nameField = $name;
 
         return $this;
     }
@@ -98,7 +151,7 @@ abstract class Scope extends DatabaseItem implements ScopeInterface
     /**
      * @inheritdoc
      */
-    public function setDescription(string $description = null): ScopeInterface
+    public function setDescription(?string $description = null): Entity
     {
         $this->descriptionField = $description;
 
@@ -108,22 +161,16 @@ abstract class Scope extends DatabaseItem implements ScopeInterface
     /**
      * @inheritdoc
      */
-    public function setCreatedAt(DateTimeInterface $createdAt): ScopeInterface
+    public function setCreatedAt(?DateTimeInterface $createdAt = null): Entity
     {
-        /** @var ScopeInterface $self */
-        $self = $this->setCreatedAtImpl($createdAt);
-
-        return $self;
+        return $this->setCreatedAtImpl($createdAt);
     }
 
     /**
      * @inheritdoc
      */
-    public function setUpdatedAt(DateTimeInterface $createdAt): ScopeInterface
+    public function setUpdatedAt(?DateTimeInterface $createdAt = null): Entity
     {
-        /** @var ScopeInterface $self */
-        $self = $this->setUpdatedAtImpl($createdAt);
-
-        return $self;
+        return $this->setUpdatedAtImpl($createdAt);
     }
 }

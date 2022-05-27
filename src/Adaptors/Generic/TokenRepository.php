@@ -22,12 +22,13 @@ declare(strict_types=1);
 namespace Whoa\Passport\Adaptors\Generic;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException as DBALEx;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Contracts\Entities\TokenInterface;
 use Whoa\Passport\Exceptions\RepositoryException;
 use PDO;
+
 use function assert;
 use function is_numeric;
 
@@ -39,19 +40,22 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
     /**
      * @var string
      */
-    private $modelClass;
+    private string $modelClass;
 
     /**
-     * @param Connection              $connection
+     * @param Connection $connection
      * @param DatabaseSchemaInterface $databaseSchema
-     * @param string                  $modelClass
+     * @param string $modelClass
      */
     public function __construct(
         Connection $connection,
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Token::class
-    )
-    {
+    ) {
+        parent::__construct(
+            new ClientRepository($connection, $databaseSchema),
+            new ScopeRepository($connection, $databaseSchema)
+        );
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }
@@ -59,12 +63,13 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
     /**
      * @inheritdoc
      */
-    public function read(int $identifier): ?TokenInterface
+    public function read(int $identity): ?TokenInterface
     {
-        $token = parent::read($identifier);
+        $token = parent::read($identity);
 
         if ($token !== null) {
             $this->addScope($token);
+            $this->associateClientIdentifier($token);
         }
 
         return $token;
@@ -78,6 +83,7 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
         $token = parent::readByCode($code, $expirationInSeconds);
         if ($token !== null) {
             $this->addScope($token);
+            $this->associateClientIdentifier($token);
         }
 
         return $token;
@@ -91,6 +97,7 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
         $token = parent::readByValue($tokenValue, $expirationInSeconds);
         if ($token !== null) {
             $this->addScope($token);
+            $this->associateClientIdentifier($token);
         }
 
         return $token;
@@ -104,6 +111,7 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
         $token = parent::readByRefresh($refreshValue, $expirationInSeconds);
         if ($token !== null) {
             $this->addScope($token);
+            $this->associateClientIdentifier($token);
         }
 
         return $token;
@@ -111,23 +119,26 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
+     * @param int $userId
+     * @param int $expirationInSeconds
+     * @param int|null $limit
+     * @return array
      */
     public function readByUser(int $userId, int $expirationInSeconds, int $limit = null): array
     {
         try {
             /** @var TokenInterface[] $tokens */
             $tokens = parent::readByUser($userId, $expirationInSeconds, $limit);
+            array_walk($tokens, [$this, 'associateClientIdentifier']);
 
             // select scope identifiers for tokens
             if (empty($tokens) === false) {
-                $schema        = $this->getDatabaseSchema();
+                $schema = $this->getDatabaseSchema();
                 $tokenIdColumn = $schema->getTokensScopesTokenIdentityColumn();
                 $scopeIdColumn = $schema->getTokensScopesScopeIdentityColumn();
 
                 $connection = $this->getConnection();
-                $query      = $connection->createQueryBuilder();
+                $query = $connection->createQueryBuilder();
 
                 $tokenIds = array_keys($tokens);
                 $query
@@ -141,17 +152,17 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
                 $tokenScopePairs = $statement->fetchAll();
 
                 $curTokenId = null;
-                $curScopes  = null;
+                $curScopes = null;
                 // set selected scopes to tokens
                 foreach ($tokenScopePairs as $pair) {
                     $tokenId = $pair[$tokenIdColumn];
-                    $scopeId = $pair[$scopeIdColumn];
+                    $scopeId = $this->getScopeRepository()->queryIdentifier((int)$pair[$scopeIdColumn]);
 
                     if ($curTokenId !== $tokenId) {
                         $assignScopes = $curTokenId !== null && empty($curScopes) === false;
                         $assignScopes ? $tokens[$curTokenId]->setScopeIdentifiers($curScopes) : null;
                         $curTokenId = $tokenId;
-                        $curScopes  = [$scopeId];
+                        $curScopes = [$scopeId];
 
                         continue;
                     }
@@ -163,7 +174,7 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
             }
 
             return $tokens;
-        } /** @noinspection PhpRedundantCatchClauseInspection */ catch (RepositoryException | DBALEx $exception) {
+        } catch (RepositoryException|DBALException $exception) {
             $message = 'Token reading failed.';
             throw new RepositoryException($message, 0, $exception);
         }
@@ -171,28 +182,30 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
+     * @param string $tokenValue
+     * @param int $expirationInSeconds
+     * @return array|null
      */
     public function readPassport(string $tokenValue, int $expirationInSeconds): ?array
     {
         try {
             $statement = $this->createPassportDataQuery($tokenValue, $expirationInSeconds)->execute();
             $statement->setFetchMode(PDO::FETCH_ASSOC);
-            $data   = $statement->fetch();
+            $data = $statement->fetch();
             $result = null;
             if ($data !== false) {
-                $schema  = $this->getDatabaseSchema();
+                $schema = $this->getDatabaseSchema();
                 $tokenId = $data[$schema->getTokensIdentityColumn()];
                 assert(is_numeric($tokenId));
 
-                $scopes                                     = $this->readScopeIdentifiers((int)$tokenId);
+                // $scopes = $this->readScopeIdentifiers((int)$tokenId);
+                $scopes = $this->readScopeColumns((int)$tokenId);
                 $data[$schema->getTokensViewScopesColumn()] = $scopes;
-                $result                                     = $data;
+                $result = $data;
             }
 
             return $result;
-        } /** @noinspection PhpRedundantCatchClauseInspection */ catch (DBALEx $exception) {
+        } catch (DBALException $exception) {
             $message = 'Passport reading failed';
             throw new RepositoryException($message, 0, $exception);
         }
@@ -216,28 +229,27 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
 
     /**
      * @param string $tokenValue
-     * @param int    $expirationInSeconds
+     * @param int $expirationInSeconds
      *
      * @return QueryBuilder
      */
     private function createPassportDataQuery(
         string $tokenValue,
         int $expirationInSeconds
-    ): QueryBuilder
-    {
+    ): QueryBuilder {
         $schema = $this->getDatabaseSchema();
-        $query  = $this->createEnabledTokenByColumnWithExpirationCheckQuery(
+        $query = $this->createEnabledTokenByColumnWithExpirationCheckQuery(
             $tokenValue,
             $schema->getTokensValueColumn(),
             $expirationInSeconds,
             $schema->getTokensValueCreatedAtColumn()
         );
 
-        $connection       = $query->getConnection();
+        $connection = $query->getConnection();
         $tokensTableAlias = $this->getTableNameForReading();
-        $usersTable       = $connection->quoteIdentifier($usersTableAlias = $schema->getUsersTable());
-        $usersFk          = $connection->quoteIdentifier($schema->getTokensUserIdentityColumn());
-        $usersPk          = $connection->quoteIdentifier($schema->getUsersIdentityColumn());
+        $usersTable = $connection->quoteIdentifier($usersTableAlias = $schema->getUsersTable());
+        $usersFk = $connection->quoteIdentifier($schema->getTokensUserIdentityColumn());
+        $usersPk = $connection->quoteIdentifier($schema->getUsersIdentityColumn());
         $query->innerJoin(
             $tokensTableAlias,
             $usersTable,
@@ -250,13 +262,11 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
 
     /**
      * @param TokenInterface $token
-     *
      * @return void
-     *
      * @throws RepositoryException
      */
     private function addScope(TokenInterface $token)
     {
-        $token->setScopeIdentifiers($this->readScopeIdentifiers($token->getIdentifier()));
+        $token->setScopeIdentifiers($this->readScopeIdentifiers($token->getIdentity()));
     }
 }

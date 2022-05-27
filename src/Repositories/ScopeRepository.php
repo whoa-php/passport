@@ -33,8 +33,6 @@ abstract class ScopeRepository extends BaseRepository implements ScopeRepository
 {
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
     public function index(): array
     {
@@ -48,24 +46,25 @@ abstract class ScopeRepository extends BaseRepository implements ScopeRepository
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
     public function create(ScopeInterface $scope): ScopeInterface
     {
         try {
-            $now    = $this->ignoreException(function (): DateTimeImmutable {
+            $now = $this->ignoreException(function (): DateTimeImmutable {
                 return new DateTimeImmutable();
             });
             $schema = $this->getDatabaseSchema();
-            $this->createResource([
-                $schema->getScopesIdentityColumn()    => $scope->getIdentifier(),
-                $schema->getScopesUuidColumn()        => $scope->getUuid(),
+            $values = [
+                $schema->getScopesIdentifierColumn() => $scope->getIdentifier(),
+                $schema->getScopesUuidColumn() => $scope->getUuid(),
+                $schema->getScopesNameColumn() => $scope->getName(),
                 $schema->getScopesDescriptionColumn() => $scope->getDescription(),
-                $schema->getScopesCreatedAtColumn()   => $now,
-            ]);
+                $schema->getScopesCreatedAtColumn() => $now,
+            ];
+            $this->createResource($values);
+            $identity = $this->getLastInsertId();
 
-            $scope->setUuid()->setCreatedAt($now);
+            $scope->setIdentity($identity)->setUuid()->setCreatedAt($now);
 
             return $scope;
         } catch (RepositoryException $exception) {
@@ -75,14 +74,21 @@ abstract class ScopeRepository extends BaseRepository implements ScopeRepository
     }
 
     /**
-     * @inheritdoc
-     *
-     * @throws RepositoryException
+     * @inheritDoc
      */
-    public function read(string $identifier): ScopeInterface
+    public function read($index): ?ScopeInterface
     {
         try {
-            return $this->readResource($identifier);
+            assert($index instanceof ScopeInterface || is_string($index) === true || is_int($index) === true);
+            if ($index instanceof ScopeInterface) {
+                return $index;
+            } elseif (is_int($index) === true) {
+                return $this->readResource($index);
+            } elseif (is_string($index) === true) {
+                return $this->readResource($index, $this->getIdentifierKeyName());
+            }
+
+            return null;
         } catch (RepositoryException $exception) {
             $message = 'Scope reading failed.';
             throw new RepositoryException($message, 0, $exception);
@@ -91,19 +97,19 @@ abstract class ScopeRepository extends BaseRepository implements ScopeRepository
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
     public function update(ScopeInterface $scope): void
     {
         try {
-            $now    = $this->ignoreException(function (): DateTimeImmutable {
+            $now = $this->ignoreException(function (): DateTimeImmutable {
                 return new DateTimeImmutable();
             });
             $schema = $this->getDatabaseSchema();
-            $this->updateResource($scope->getIdentifier(), [
+            $this->updateResource($scope->getIdentity(), [
+                $schema->getScopesIdentifierColumn() => $scope->getIdentifier(),
+                $schema->getScopesNameColumn() => $scope->getName(),
                 $schema->getScopesDescriptionColumn() => $scope->getDescription(),
-                $schema->getScopesUpdatedAtColumn()   => $now,
+                $schema->getScopesUpdatedAtColumn() => $now,
             ]);
             $scope->setUpdatedAt($now);
         } catch (RepositoryException $exception) {
@@ -114,13 +120,11 @@ abstract class ScopeRepository extends BaseRepository implements ScopeRepository
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
-    public function delete(string $identifier): void
+    public function delete($index)
     {
         try {
-            $this->deleteResource($identifier);
+            $this->deleteResource($index);
         } catch (RepositoryException $exception) {
             $message = 'Scope deletion failed.';
             throw new RepositoryException($message, 0, $exception);
@@ -141,5 +145,35 @@ abstract class ScopeRepository extends BaseRepository implements ScopeRepository
     protected function getPrimaryKeyName(): string
     {
         return $this->getDatabaseSchema()->getScopesIdentityColumn();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getIdentifierKeyName(): string
+    {
+        return $this->getDatabaseSchema()->getScopesIdentifierColumn();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function queryIdentity($index): ?int
+    {
+        if (($scope = $this->read($index)) !== null) {
+            return $scope->getIdentity();
+        }
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function queryIdentifier($index): ?string
+    {
+        if (($scope = $this->read($index)) !== null) {
+            return $scope->getIdentifier();
+        }
+        return null;
     }
 }

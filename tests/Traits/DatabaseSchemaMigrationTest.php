@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace Whoa\Tests\Passport\Traits;
 
-use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Connection as DBALConnection;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Types\Type;
 use Whoa\Doctrine\Types\UuidType as WhoaUuidType;
@@ -41,6 +41,7 @@ class DatabaseSchemaMigrationTest extends TestCase
 
     /**
      * @inheritDoc
+     * @throws DBALException
      */
     protected function setUp(): void
     {
@@ -67,14 +68,14 @@ class DatabaseSchemaMigrationTest extends TestCase
         $this->expectException(DBALException::class);
 
         /** @var Mock $connection */
-        $connection = Mockery::mock(Connection::class);
+        $connection = Mockery::mock(DBALConnection::class);
         $connection->shouldReceive('getSchemaManager')->zeroOrMoreTimes()->withNoArgs()->andReturnSelf();
         $connection->shouldReceive('dropAndCreateTable')->once()->withAnyArgs()
             ->andThrow(DBALException::invalidTableName('whatever'));
         $connection->shouldReceive('isConnected')->once()->withNoArgs()->andReturn(true);
         $connection->shouldReceive('tablesExist')->zeroOrMoreTimes()->withAnyArgs()->andReturn(false);
 
-        /** @var Connection $connection */
+        /** @var DBALConnection $connection */
 
         $this->createDatabaseSchema($connection, new DatabaseSchema(User::TABLE_NAME, User::FIELD_ID));
     }

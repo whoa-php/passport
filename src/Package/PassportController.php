@@ -21,10 +21,13 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Package;
 
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Passport\Contracts\PassportServerInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+
 use function assert;
 
 /**
@@ -32,53 +35,47 @@ use function assert;
  */
 class PassportController
 {
-    /** @var callable */
-    const AUTHORIZE_HANDLER = [self::class, 'authorize'];
+    /** @var callable Authorize handler */
+    public const AUTHORIZE_HANDLER = [self::class, 'authorize'];
 
-    /** @var callable */
-    const TOKEN_HANDLER = [self::class, 'token'];
+    /** @var callable Token handler */
+    public const TOKEN_HANDLER = [self::class, 'token'];
 
     /**
-     * @param array                  $routeParams
-     * @param ContainerInterface     $container
+     * @param array $routeParams
+     * @param ContainerInterface $container
      * @param ServerRequestInterface $request
      *
      * @return ResponseInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public static function authorize(
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface
-    {
-        assert($routeParams !== null && $request !== null);
-
+    ): ResponseInterface {
         /** @var PassportServerInterface $passportServer */
         $passportServer = $container->get(PassportServerInterface::class);
-        $tokenResponse  = $passportServer->getCreateAuthorization($request);
-
-        return $tokenResponse;
+        return $passportServer->getCreateAuthorization($request);
     }
 
     /**
-     * @param array                  $routeParams
-     * @param ContainerInterface     $container
+     * @param array $routeParams
+     * @param ContainerInterface $container
      * @param ServerRequestInterface $request
      *
      * @return ResponseInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public static function token(
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface
-    {
-        assert($routeParams !== null && $request !== null);
-
+    ): ResponseInterface {
         /** @var PassportServerInterface $passportServer */
         $passportServer = $container->get(PassportServerInterface::class);
-        $tokenResponse  = $passportServer->postCreateToken($request);
-
-        return $tokenResponse;
+        return $passportServer->postCreateToken($request);
     }
 }

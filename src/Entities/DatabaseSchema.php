@@ -21,66 +21,66 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Entities;
 
+use Whoa\Contracts\Data\TimestampFields;
+use Whoa\Contracts\Data\UuidFields;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
-use Whoa\Passport\Models\Client as ClientModel;
-use Whoa\Passport\Models\ClientScope as ClientScopeModel;
-use Whoa\Passport\Models\RedirectUri as RedirectUriModel;
-use Whoa\Passport\Models\Scope as ScopeModel;
-use Whoa\Passport\Models\Token as TokenModel;
-use Whoa\Passport\Models\TokenScope as TokenScopeModel;
+use Whoa\Passport\Contracts\Models\ClientModelInterface;
+use Whoa\Passport\Contracts\Models\ClientScopeModelInterface;
+use Whoa\Passport\Contracts\Models\RedirectUriModelInterface;
+use Whoa\Passport\Contracts\Models\ScopeModelInterface;
+use Whoa\Passport\Contracts\Models\TokenModelInterface;
+use Whoa\Passport\Contracts\Models\TokenScopeModelInterface;
 
 /**
  * @package Whoa\Passport
- *
- * @SuppressWarnings(PHPMD)
  */
 class DatabaseSchema implements DatabaseSchemaInterface
 {
-    /** Table name */
-    const TABLE_CLIENTS = ClientModel::TABLE_NAME;
+    /** @var string Table name */
+    public const TABLE_CLIENTS = ClientModelInterface::TABLE_NAME;
 
-    /** View name */
-    const VIEW_CLIENTS = 'vw_oauth_clients';
+    /** @var string View name */
+    public const VIEW_CLIENTS = 'vw_oauth_clients';
 
-    /** Table name */
-    const TABLE_CLIENTS_SCOPES = ClientScopeModel::TABLE_NAME;
+    /** @var string Table name */
+    public const TABLE_CLIENTS_SCOPES = ClientScopeModelInterface::TABLE_NAME;
 
-    /** Table name */
-    const TABLE_REDIRECT_URIS = RedirectUriModel::TABLE_NAME;
+    /** @var string Table name */
+    public const TABLE_REDIRECT_URIS = RedirectUriModelInterface::TABLE_NAME;
 
-    /** Table name */
-    const TABLE_SCOPES = ScopeModel::TABLE_NAME;
+    /** @var string Table name */
+    public const TABLE_SCOPES = ScopeModelInterface::TABLE_NAME;
 
-    /** Table name */
-    const TABLE_TOKENS = TokenModel::TABLE_NAME;
+    /** @var string Table name */
+    public const TABLE_TOKENS = TokenModelInterface::TABLE_NAME;
 
-    /** View name */
-    const VIEW_TOKENS = 'vw_oauth_tokens';
+    /** @var string View name */
+    public const VIEW_TOKENS = 'vw_oauth_tokens';
 
-    /** Table name */
-    const TABLE_TOKENS_SCOPES = TokenScopeModel::TABLE_NAME;
+    /** @var string Table name */
+    public const TABLE_TOKENS_SCOPES = TokenScopeModelInterface::TABLE_NAME;
 
-    /** View name */
-    const VIEW_USERS = 'vw_oauth_users';
-
-    /** Field name */
-    const CLIENTS_SCOPES_FIELD_ID = ClientScopeModel::FIELD_ID;
+    /** @var string View name */
+    public const VIEW_USERS = 'vw_oauth_users';
 
     /** Field name */
-    const TOKENS_SCOPES_FIELD_ID = TokenScopeModel::FIELD_ID;
+    public const CLIENTS_SCOPES_FIELD_ID = ClientScopeModelInterface::FIELD_ID;
 
-    /** View name */
-    const VIEW_PASSPORT = 'vw_oauth_passport';
+    /** Field name */
+    public const TOKENS_SCOPES_FIELD_ID = TokenScopeModelInterface::FIELD_ID;
+
+    /** @var string View name */
+    public const VIEW_PASSPORT = 'vw_oauth_passport';
 
     /**
      * @var string|null
      */
-    private $usersTableName;
+    private ?string $usersTableName = null;
 
     /**
      * @var string|null
      */
-    private $usersIdColumn;
+    private ?string $usersIdColumn = null;
 
     /**
      * @param null|string $usersTableName
@@ -89,7 +89,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
     public function __construct(string $usersTableName = null, string $usersIdColumn = null)
     {
         $this->usersTableName = $usersTableName;
-        $this->usersIdColumn  = $usersIdColumn;
+        $this->usersIdColumn = $usersIdColumn;
     }
 
     /**
@@ -135,9 +135,17 @@ class DatabaseSchema implements DatabaseSchemaInterface
     /**
      * @inheritDoc
      */
+    public function getClientsIdentifierColumn(): string
+    {
+        return Client::FIELD_IDENTIFIER;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getClientsUuidColumn(): string
     {
-        return Client::FIELD_UUID;
+        return UuidFields::FIELD_UUID;
     }
 
     /**
@@ -233,7 +241,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getClientsCreatedAtColumn(): string
     {
-        return Client::FIELD_CREATED_AT;
+        return TimestampFields::FIELD_CREATED_AT;
     }
 
     /**
@@ -241,7 +249,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getClientsUpdatedAtColumn(): string
     {
-        return Client::FIELD_UPDATED_AT;
+        return TimestampFields::FIELD_UPDATED_AT;
     }
 
     /**
@@ -297,7 +305,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getRedirectUrisUuidColumn(): string
     {
-        return RedirectUri::FIELD_UUID;
+        return UuidFields::FIELD_UUID;
     }
 
     /**
@@ -321,7 +329,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getRedirectUrisCreatedAtColumn(): string
     {
-        return RedirectUri::FIELD_CREATED_AT;
+        return TimestampFields::FIELD_CREATED_AT;
     }
 
     /**
@@ -329,7 +337,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getRedirectUrisUpdatedAtColumn(): string
     {
-        return RedirectUri::FIELD_UPDATED_AT;
+        return TimestampFields::FIELD_UPDATED_AT;
     }
 
     /**
@@ -351,9 +359,25 @@ class DatabaseSchema implements DatabaseSchemaInterface
     /**
      * @inheritDoc
      */
+    public function getScopesIdentifierColumn(): string
+    {
+        return Scope::FIELD_IDENTIFIER;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getScopesUuidColumn(): string
     {
-        return Scope::FIELD_UUID;
+        return UuidFields::FIELD_UUID;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getScopesNameColumn(): string
+    {
+        return Scope::FIELD_NAME;
     }
 
     /**
@@ -369,7 +393,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getScopesCreatedAtColumn(): string
     {
-        return Scope::FIELD_CREATED_AT;
+        return TimestampFields::FIELD_CREATED_AT;
     }
 
     /**
@@ -377,7 +401,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getScopesUpdatedAtColumn(): string
     {
-        return Scope::FIELD_UPDATED_AT;
+        return TimestampFields::FIELD_UPDATED_AT;
     }
 
     /**
@@ -417,7 +441,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getTokensUuidColumn(): string
     {
-        return Token::FIELD_UUID;
+        return UuidFields::FIELD_UUID;
     }
 
     /**
@@ -521,7 +545,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getTokensCreatedAtColumn(): string
     {
-        return Token::FIELD_CREATED_AT;
+        return TimestampFields::FIELD_CREATED_AT;
     }
 
     /**
@@ -529,7 +553,7 @@ class DatabaseSchema implements DatabaseSchemaInterface
      */
     public function getTokensUpdatedAtColumn(): string
     {
-        return Token::FIELD_UPDATED_AT;
+        return TimestampFields::FIELD_UPDATED_AT;
     }
 
     /**

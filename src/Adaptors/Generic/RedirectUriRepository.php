@@ -23,6 +23,7 @@ namespace Whoa\Passport\Adaptors\Generic;
 
 use Doctrine\DBAL\Connection;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
+use Whoa\Passport\Contracts\Entities\RedirectUriInterface;
 
 /**
  * @package Whoa\Passport
@@ -32,21 +33,46 @@ class RedirectUriRepository extends \Whoa\Passport\Repositories\RedirectUriRepos
     /**
      * @var string
      */
-    private $modelClass;
+    private string $modelClass;
 
     /**
-     * @param Connection              $connection
+     * @param Connection $connection
      * @param DatabaseSchemaInterface $databaseSchema
-     * @param string                  $modelClass
+     * @param string $modelClass
      */
     public function __construct(
         Connection $connection,
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = RedirectUri::class
-    )
-    {
+    ) {
+        parent::__construct(new ClientRepository($connection, $databaseSchema));
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function read(int $identity): ?RedirectUriInterface
+    {
+        $redirectUri = parent::read($identity);
+
+        if ($redirectUri != null) {
+            $this->associateClientIdentifier($redirectUri);
+        }
+
+        return $redirectUri;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function indexClientUris(string $clientIdentifier): array
+    {
+        $uris = parent::indexClientUris($clientIdentifier);
+        array_walk($uris, [$this, 'associateClientIdentifier']);
+
+        return $uris;
     }
 
     /**

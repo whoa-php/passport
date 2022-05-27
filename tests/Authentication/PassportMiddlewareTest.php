@@ -22,6 +22,10 @@ declare(strict_types=1);
 namespace Whoa\Tests\Passport\Authentication;
 
 use Exception;
+use Laminas\Diactoros\Response;
+use Laminas\Diactoros\ServerRequest;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Contracts\Passport\PassportAccountInterface;
 use Whoa\Contracts\Passport\PassportAccountManagerInterface;
 use Whoa\Contracts\Settings\SettingsProviderInterface;
@@ -34,8 +38,6 @@ use Mockery\Mock;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Zend\Diactoros\Response;
-use Zend\Diactoros\ServerRequest;
 
 /**
  * @package Whoa\Tests\Passport
@@ -45,23 +47,24 @@ class PassportMiddlewareTest extends TestCase
     /**
      * Test handle.
      *
-     * @throws Exception
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testHandleWithValidToken()
     {
-        $token      = 'abc123';
-        $request    = (new ServerRequest())->withHeader('Authorization', "Bearer $token");
+        $token = 'abc123';
+        $request = (new ServerRequest())->withHeader('Authorization', "Bearer $token");
         $nextCalled = false;
-        $next       = function () use (&$nextCalled) {
+        $next = function () use (&$nextCalled) {
             $nextCalled = true;
 
             return new Response();
         };
-        $container  = new TestContainer();
+        $container = new TestContainer();
         /** @var Mock $managerMock */
         $container[PassportAccountManagerInterface::class] = $managerMock =
             Mockery::mock(PassportAccountManagerInterface::class);
-        $accountMock                                       = Mockery::mock(PassportAccountInterface::class);
+        $accountMock = Mockery::mock(PassportAccountInterface::class);
         $managerMock->shouldReceive('setAccountWithTokenValue')->once()->with($token)->andReturn($accountMock);
 
         PassportMiddleware::handle($request, $next, $container);
@@ -72,16 +75,17 @@ class PassportMiddlewareTest extends TestCase
     /**
      * Test handle.
      *
-     * @throws Exception
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testHandleWithMalformedToken()
     {
-        $request                                     = (new ServerRequest())->withHeader('Authorization', 'Bearer ');
-        $nextCalled                                  = false;
-        $container                                   = new TestContainer();
-        $container[LoggerInterface::class]           = new NullLogger();
+        $request = (new ServerRequest())->withHeader('Authorization', 'Bearer ');
+        $nextCalled = false;
+        $container = new TestContainer();
+        $container[LoggerInterface::class] = new NullLogger();
         $container[SettingsProviderInterface::class] = PassportContainerConfiguratorTest::createSettingsProvider();
-        $next                                        = function () use (&$nextCalled) {
+        $next = function () use (&$nextCalled) {
             $nextCalled = true;
 
             return new Response();
@@ -96,16 +100,17 @@ class PassportMiddlewareTest extends TestCase
     /**
      * Test handle.
      *
-     * @throws Exception
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testHandleWithInvalidToken()
     {
-        $request                                     = (new ServerRequest())->withHeader('Authorization', 'Bearer XXX');
-        $nextCalled                                  = false;
-        $container                                   = new TestContainer();
-        $container[LoggerInterface::class]           = new NullLogger();
+        $request = (new ServerRequest())->withHeader('Authorization', 'Bearer XXX');
+        $nextCalled = false;
+        $container = new TestContainer();
+        $container[LoggerInterface::class] = new NullLogger();
         $container[SettingsProviderInterface::class] = PassportContainerConfiguratorTest::createSettingsProvider();
-        $next                                        = function () use (&$nextCalled) {
+        $next = function () use (&$nextCalled) {
             $nextCalled = true;
 
             return new Response();

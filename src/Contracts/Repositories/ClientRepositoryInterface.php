@@ -32,7 +32,6 @@ interface ClientRepositoryInterface
 {
     /**
      * @param Closure $closure
-     *
      * @return void
      */
     public function inTransaction(Closure $closure): void;
@@ -44,66 +43,69 @@ interface ClientRepositoryInterface
 
     /**
      * @param ClientInterface $client
-     *
      * @return ClientInterface
      */
     public function create(ClientInterface $client): ClientInterface;
 
     /**
-     * @param string                    $identifier
+     * @param ClientInterface|string|int $client
      * @param iterable|ScopeInterface[] $scopes
-     *
      * @return void
      */
-    public function bindScopes(string $identifier, iterable $scopes): void;
+    public function bindScopes($client, iterable $scopes): void;
 
     /**
-     * @param string            $identifier
+     * @param ClientInterface|string|int $client
      * @param iterable|string[] $scopeIdentifiers
-     *
      * @return void
      */
-    public function bindScopeIdentifiers(string $identifier, iterable $scopeIdentifiers): void;
+    public function bindScopeIdentifiers($client, iterable $scopeIdentifiers): void;
 
     /**
-     * @param string $identifier
-     *
+     * @param ClientInterface|string|int $client
      * @return void
      */
-    public function unbindScopes(string $identifier): void;
+    public function unbindScopes($client): void;
 
     /**
-     * @param string $identifier
-     *
+     * @param ClientInterface|string|int $index
      * @return ClientInterface|null
      */
-    public function read(string $identifier): ?ClientInterface;
+    public function read($index): ?ClientInterface;
 
     /**
-     * @param string $identifier
-     *
+     * @param ClientInterface|string|int $client
      * @return string[]
      */
-    public function readScopeIdentifiers(string $identifier): array;
+    public function readScopeIdentifiers($client): array;
 
     /**
      * @param string $identifier
-     *
      * @return string[]
      */
     public function readRedirectUriStrings(string $identifier): array;
 
     /**
      * @param ClientInterface $client
-     *
      * @return void
      */
     public function update(ClientInterface $client): void;
 
     /**
-     * @param string $identifier
-     *
+     * @param string|int $index
      * @return void
      */
-    public function delete(string $identifier): void;
+    public function delete(string $index): void;
+
+    /**
+     * @param ClientInterface|string|int $index
+     * @return int|null
+     */
+    public function queryIdentity($index): ?int;
+
+    /**
+     * @param ClientInterface|string|int $index
+     * @return string|null
+     */
+    public function queryIdentifier($index): ?string;
 }

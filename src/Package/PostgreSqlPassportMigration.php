@@ -22,11 +22,14 @@ declare(strict_types=1);
 namespace Whoa\Passport\Package;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Contracts\Data\MigrationInterface;
 use Whoa\Passport\Adaptors\PostgreSql\DatabaseSchemaMigrationTrait;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Psr\Container\ContainerInterface;
+
 use function assert;
 
 /**
@@ -39,7 +42,7 @@ class PostgreSqlPassportMigration implements MigrationInterface
     /**
      * @var ContainerInterface
      */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * @inheritdoc
@@ -54,6 +57,8 @@ class PostgreSqlPassportMigration implements MigrationInterface
     /**
      * @return void
      *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws DBALException
      */
     public function migrate(): void
@@ -64,6 +69,8 @@ class PostgreSqlPassportMigration implements MigrationInterface
     /**
      * @return void
      *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws DBALException
      */
     public function rollback(): void
@@ -76,13 +83,13 @@ class PostgreSqlPassportMigration implements MigrationInterface
      */
     protected function getContainer(): ContainerInterface
     {
-        assert($this->container !== null);
-
         return $this->container;
     }
 
     /**
      * @return Connection
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getConnection(): Connection
     {
@@ -91,6 +98,8 @@ class PostgreSqlPassportMigration implements MigrationInterface
 
     /**
      * @return DatabaseSchemaInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getDatabaseSchema(): DatabaseSchemaInterface
     {

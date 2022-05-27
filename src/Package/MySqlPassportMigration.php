@@ -21,13 +21,14 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Package;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Connection as DBALConnection;
+use Doctrine\DBAL\Exception as DBALException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Contracts\Data\MigrationInterface;
 use Whoa\Passport\Adaptors\MySql\DatabaseSchemaMigrationTrait;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Psr\Container\ContainerInterface;
-use function assert;
 
 /**
  * @package Whoa\Passport
@@ -39,7 +40,7 @@ class MySqlPassportMigration implements MigrationInterface
     /**
      * @var ContainerInterface
      */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * @inheritdoc
@@ -54,6 +55,8 @@ class MySqlPassportMigration implements MigrationInterface
     /**
      * @return void
      *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws DBALException
      */
     public function migrate(): void
@@ -64,6 +67,8 @@ class MySqlPassportMigration implements MigrationInterface
     /**
      * @return void
      *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws DBALException
      */
     public function rollback(): void
@@ -76,21 +81,23 @@ class MySqlPassportMigration implements MigrationInterface
      */
     protected function getContainer(): ContainerInterface
     {
-        assert($this->container !== null);
-
         return $this->container;
     }
 
     /**
-     * @return Connection
+     * @return DBALConnection
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    protected function getConnection(): Connection
+    protected function getConnection(): DBALConnection
     {
-        return $this->getContainer()->get(Connection::class);
+        return $this->getContainer()->get(DBALConnection::class);
     }
 
     /**
      * @return DatabaseSchemaInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getDatabaseSchema(): DatabaseSchemaInterface
     {

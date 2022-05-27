@@ -36,22 +36,22 @@ class PassportServerIntegration extends BasePassportServerIntegration
     /**
      * @var ClientRepositoryInterface|null
      */
-    private $clientRepo;
+    private ?ClientRepositoryInterface $clientRepo = null;
 
     /**
      * @var TokenRepositoryInterface|null
      */
-    private $tokenRepo;
+    private ?TokenRepositoryInterface $tokenRepo = null;
 
     /**
      * @var ScopeRepositoryInterface|null
      */
-    private $scopeRepo;
+    private ?ScopeRepositoryInterface $scopeRepo = null;
 
     /**
      * @var RedirectUriRepositoryInterface|null
      */
-    private $uriRepo;
+    private ?RedirectUriRepositoryInterface $uriRepo = null;
 
     /**
      * @inheritdoc
@@ -106,8 +106,6 @@ class PassportServerIntegration extends BasePassportServerIntegration
      */
     public function createTokenInstance(): TokenInterface
     {
-        $token = new Token();
-
-        return $token;
+        return new Token();
     }
 }

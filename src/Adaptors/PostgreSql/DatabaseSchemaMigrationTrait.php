@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Adaptors\PostgreSql;
 
-use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Connection as DBALConnection;
 use Doctrine\DBAL\Exception as DBALException;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Traits\DatabaseSchemaMigrationTrait as BaseDatabaseSchemaMigrationTrait;
@@ -37,14 +37,14 @@ trait DatabaseSchemaMigrationTrait
     }
 
     /**
-     * @param Connection              $connection
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
      * @return void
      * @throws DBALException
      *
      */
-    protected function createDatabaseSchema(Connection $connection, DatabaseSchemaInterface $schema): void
+    protected function createDatabaseSchema(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
         try {
             $this->createDatabaseTables($connection, $schema);
@@ -59,28 +59,28 @@ trait DatabaseSchemaMigrationTrait
     }
 
     /**
-     * @param Connection              $connection
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
      * @return void
      *
      * @throws DBALException
      */
-    protected function removeDatabaseSchema(Connection $connection, DatabaseSchemaInterface $schema): void
+    protected function removeDatabaseSchema(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
         $this->removeDatabaseViews($connection, $schema);
         $this->removeDatabaseTables($connection, $schema);
     }
 
     /**
-     * @param Connection              $connection
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
      * @return void
      *
      * @throws DBALException
      */
-    protected function createDatabaseViews(Connection $connection, DatabaseSchemaInterface $schema): void
+    protected function createDatabaseViews(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
         $this->createClientsView($connection, $schema);
         $this->createTokensView($connection, $schema);
@@ -89,14 +89,14 @@ trait DatabaseSchemaMigrationTrait
     }
 
     /**
-     * @param Connection              $connection
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
      * @return void
      *
      * @throws DBALException
      */
-    protected function removeDatabaseViews(Connection $connection, DatabaseSchemaInterface $schema): void
+    protected function removeDatabaseViews(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
         $this->removePassportView($connection, $schema);
         $this->removeUsersView($connection, $schema);
@@ -104,23 +104,23 @@ trait DatabaseSchemaMigrationTrait
         $this->removeClientsView($connection, $schema);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function createTokensView(Connection $connection, DatabaseSchemaInterface $schema): void
+    private function createTokensView(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
-        $view                = $schema->getTokensView();
-        $tokens              = $schema->getTokensTable();
-        $intermediate        = $schema->getTokensScopesTable();
-        $tokensTokenId       = $schema->getTokensIdentityColumn();
+        $view = $schema->getTokensView();
+        $tokens = $schema->getTokensTable();
+        $intermediate = $schema->getTokensScopesTable();
+        $tokensTokenId = $schema->getTokensIdentityColumn();
         $intermediateTokenId = $schema->getTokensScopesTokenIdentityColumn();
         $intermediateScopeId = $schema->getTokensScopesScopeIdentityColumn();
-        $scopes              = $schema->getTokensViewScopesColumn();
+        $scopes = $schema->getTokensViewScopesColumn();
 
         $sql = <<< EOT
 CREATE OR REPLACE VIEW {$view} AS
@@ -134,34 +134,34 @@ EOT;
         $connection->executeStatement($sql);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function removeTokensView(Connection $connection, DatabaseSchemaInterface $schema)
+    private function removeTokensView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
         $view = $schema->getTokensView();
-        $sql  = "DROP VIEW IF EXISTS {$view}";
+        $sql = "DROP VIEW IF EXISTS {$view}";
         $connection->executeStatement($sql);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function createPassportView(Connection $connection, DatabaseSchemaInterface $schema): void
+    private function createPassportView(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
-        $tokensView   = $schema->getTokensView();
-        $view         = $schema->getPassportView();
-        $users        = $schema->getUsersTable();
+        $tokensView = $schema->getTokensView();
+        $view = $schema->getPassportView();
+        $users = $schema->getUsersTable();
         $tokensUserFk = $schema->getTokensUserIdentityColumn();
 
         $sql = <<< EOT
@@ -173,43 +173,43 @@ EOT;
         $connection->executeStatement($sql);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function removePassportView(Connection $connection, DatabaseSchemaInterface $schema): void
+    private function removePassportView(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
         $view = $schema->getPassportView();
-        $sql  = "DROP VIEW IF EXISTS {$view}";
+        $sql = "DROP VIEW IF EXISTS {$view}";
         $connection->executeStatement($sql);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function createClientsView(Connection $connection, DatabaseSchemaInterface $schema)
+    private function createClientsView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
-        $view             = $schema->getClientsView();
-        $scopes           = $schema->getClientsViewScopesColumn();
-        $redirectUris     = $schema->getClientsViewRedirectUrisColumn();
-        $clientsScopes    = $schema->getClientsScopesTable();
-        $clientsUris      = $schema->getRedirectUrisTable();
-        $clients          = $schema->getClientsTable();
-        $clientsClientId  = $schema->getClientsIdentityColumn();
+        $view = $schema->getClientsView();
+        $scopes = $schema->getClientsViewScopesColumn();
+        $redirectUris = $schema->getClientsViewRedirectUrisColumn();
+        $clientsScopes = $schema->getClientsScopesTable();
+        $clientsUris = $schema->getRedirectUrisTable();
+        $clients = $schema->getClientsTable();
+        $clientsClientId = $schema->getClientsIdentityColumn();
         $clScopesClientId = $schema->getClientsScopesClientIdentityColumn();
-        $clUrisClientId   = $schema->getRedirectUrisClientIdentityColumn();
-        $urisValue        = $schema->getRedirectUrisValueColumn();
-        $scopesScopeId    = $schema->getScopesIdentityColumn();
-        $sql              = <<< EOT
+        $clUrisClientId = $schema->getRedirectUrisClientIdentityColumn();
+        $urisValue = $schema->getRedirectUrisValueColumn();
+        $scopesScopeId = $schema->getScopesIdentityColumn();
+        $sql = <<< EOT
 CREATE VIEW {$view} AS
     SELECT
       c.*,
@@ -223,40 +223,40 @@ EOT;
         $connection->executeStatement($sql);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function removeClientsView(Connection $connection, DatabaseSchemaInterface $schema)
+    private function removeClientsView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
         $view = $schema->getClientsView();
-        $sql  = "DROP VIEW IF EXISTS {$view}";
+        $sql = "DROP VIEW IF EXISTS {$view}";
         $connection->executeStatement($sql);
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function createUsersView(Connection $connection, DatabaseSchemaInterface $schema)
+    private function createUsersView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
         $users = $schema->getUsersTable();
         if ($users !== null) {
-            $view            = $schema->getUsersView();
-            $tokensValue     = $schema->getTokensValueColumn();
-            $tokensValueAt   = $schema->getTokensValueCreatedAtColumn();
-            $tokensScopes    = $schema->getTokensViewScopesColumn();
-            $tokensView      = $schema->getTokensView();
-            $tokensUserId    = $schema->getTokensUserIdentityColumn();
-            $usersUserId     = $schema->getUsersIdentityColumn();
+            $view = $schema->getUsersView();
+            $tokensValue = $schema->getTokensValueColumn();
+            $tokensValueAt = $schema->getTokensValueCreatedAtColumn();
+            $tokensScopes = $schema->getTokensViewScopesColumn();
+            $tokensView = $schema->getTokensView();
+            $tokensUserId = $schema->getTokensUserIdentityColumn();
+            $usersUserId = $schema->getUsersIdentityColumn();
             $tokensIsEnabled = $schema->getTokensIsEnabledColumn();
 
             $sql = <<< EOT
@@ -271,18 +271,18 @@ EOT;
         }
     }
 
-    /** @noinspection PhpUnusedPrivateMethodInspection
-     * @param Connection              $connection
+    /**
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
      *
+     * @return void
      * @throws DBALException
      *
-     * @return void
      */
-    private function removeUsersView(Connection $connection, DatabaseSchemaInterface $schema)
+    private function removeUsersView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
         $view = $schema->getUsersView();
-        $sql  = "DROP VIEW IF EXISTS {$view}";
+        $sql = "DROP VIEW IF EXISTS {$view}";
         $connection->executeStatement($sql);
     }
 }

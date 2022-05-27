@@ -1,8 +1,7 @@
 <?php
 
 /**
- * Copyright 2015-2020 info@neomerx.com
- * Modification Copyright 2021-2022 info@whoaphp.com
+ * Copyright 2021-2022 info@whoaphp.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +18,31 @@
 
 declare(strict_types=1);
 
-namespace Whoa\Tests\Passport\Data;
+namespace Whoa\Passport\Contracts\Models;
 
 /**
- * @package Whoa\Tests\Passport
+ * @package Whoa\Passport
  */
-class User
+interface ScopeModelInterface
 {
     /** @var string Table name */
-    public const TABLE_NAME = 'users';
+    public const TABLE_NAME = 'oauth_scopes';
+
+    /** @var string Primary key */
+    public const FIELD_ID = 'id_scope';
 
     /** @var string Field name */
-    public const FIELD_ID = 'id_user';
+    public const FIELD_IDENTIFIER = 'identifier';
 
     /** @var string Field name */
     public const FIELD_NAME = 'name';
+
+    /** @var string Field name */
+    public const FIELD_DESCRIPTION = 'description';
+
+    /** @var string Relationship name */
+    public const REL_CLIENTS = 'clients';
+
+    /** @var string Relationship name */
+    public const REL_TOKENS = 'tokens';
 }

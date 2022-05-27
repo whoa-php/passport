@@ -35,8 +35,6 @@ trait ArrayParserTrait
      */
     protected function parseArray(string $values): array
     {
-        $parsed = empty($values) === false ? explode(' ', $values) : [];
-
-        return $parsed;
+        return empty($values) === false ? explode(' ', $values) : [];
     }
 }

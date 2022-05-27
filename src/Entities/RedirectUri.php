@@ -22,45 +22,50 @@ declare(strict_types=1);
 namespace Whoa\Passport\Entities;
 
 use DateTimeInterface;
-use Whoa\Passport\Contracts\Entities\RedirectUriInterface;
-use Whoa\Passport\Exceptions\InvalidArgumentException;
-use Whoa\Passport\Models\RedirectUri as Model;
+use Laminas\Diactoros\Uri;
 use Psr\Http\Message\UriInterface;
-use Zend\Diactoros\Uri;
+use Whoa\Passport\Contracts\Entities\RedirectUriInterface as Entity;
+use Whoa\Passport\Contracts\Models\RedirectUriModelInterface as Model;
+use Whoa\Passport\Exceptions\InvalidArgumentException;
 
 /**
  * @package Whoa\Passport
  */
-abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
+abstract class RedirectUri extends DatabaseItem implements Entity
 {
-    /** Field name */
-    const FIELD_ID = Model::FIELD_ID;
+    /** @var string Field name */
+    public const FIELD_ID = Model::FIELD_ID;
 
-    /** Field name */
-    const FIELD_ID_CLIENT = Model::FIELD_ID_CLIENT;
+    /** @var string Field name */
+    public const FIELD_ID_CLIENT = Model::FIELD_ID_CLIENT;
 
-    /** Field name */
-    const FIELD_VALUE = Model::FIELD_VALUE;
+    /** @var string Field name */
+    public const FIELD_VALUE = Model::FIELD_VALUE;
 
     /**
-     * @var int|null
+     * @var int
      */
-    private $identifierField;
+    private int $identityField = 0;
+
+    /**
+     * @var int
+     */
+    private int $clientIdentityField = 0;
+
+    /**
+     * @var string
+     */
+    private string $clientIdentifierField = '';
 
     /**
      * @var string|null
      */
-    private $clientIdentifierField;
-
-    /**
-     * @var string|null
-     */
-    private $valueField;
+    private ?string $valueField = null;
 
     /**
      * @var Uri|null
      */
-    private $uriObject;
+    private ?Uri $uriObject = null;
 
     /**
      * Constructor.
@@ -68,9 +73,8 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
     public function __construct()
     {
         if ($this->hasDynamicProperty(static::FIELD_ID) === true) {
-            $this
-                ->setIdentifier((int)$this->{static::FIELD_ID})
-                ->setClientIdentifier($this->{static::FIELD_ID_CLIENT})
+            $this->setIdentity((int)$this->{static::FIELD_ID})
+                ->setClientIdentity((int)$this->{static::FIELD_ID_CLIENT})
                 ->setValue($this->{static::FIELD_VALUE});
         }
     }
@@ -78,17 +82,17 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
     /**
      * @inheritdoc
      */
-    public function getIdentifier(): ?int
+    public function getIdentity(): int
     {
-        return $this->identifierField;
+        return $this->identityField;
     }
 
     /**
      * @inheritdoc
      */
-    public function setIdentifier(int $identifier): RedirectUriInterface
+    public function setIdentity(int $identity): Entity
     {
-        $this->identifierField = $identifier;
+        $this->identityField = $identity;
 
         return $this;
     }
@@ -96,10 +100,28 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
     /**
      * @inheritDoc
      */
-    public function setUuid($uuid = null): RedirectUriInterface
+    public function setUuid($uuid = null): Entity
     {
-        /** @var RedirectUriInterface $self */
+        /** @var Entity $self */
         $self = $this->setUuidImpl($uuid);
+
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getClientIdentity(): int
+    {
+        return $this->clientIdentityField;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setClientIdentity(int $clientIdentity): Entity
+    {
+        $this->clientIdentityField = $clientIdentity;
 
         return $this;
     }
@@ -107,7 +129,7 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
     /**
      * @inheritdoc
      */
-    public function getClientIdentifier(): ?string
+    public function getClientIdentifier(): string
     {
         return $this->clientIdentifierField;
     }
@@ -115,7 +137,7 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
     /**
      * @inheritdoc
      */
-    public function setClientIdentifier(string $identifier): RedirectUriInterface
+    public function setClientIdentifier(string $identifier): Entity
     {
         $this->clientIdentifierField = $identifier;
 
@@ -133,7 +155,7 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
     /**
      * @inheritdoc
      */
-    public function setValue(string $uri): RedirectUriInterface
+    public function setValue(string $uri): Entity
     {
         // @link https://tools.ietf.org/html/rfc6749#section-3.1.2
         //
@@ -146,7 +168,7 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
         }
 
         $this->valueField = $uri;
-        $this->uriObject  = $uriObject;
+        $this->uriObject = $uriObject;
 
         return $this;
     }
@@ -162,22 +184,16 @@ abstract class RedirectUri extends DatabaseItem implements RedirectUriInterface
     /**
      * @inheritdoc
      */
-    public function setCreatedAt(DateTimeInterface $createdAt): RedirectUriInterface
+    public function setCreatedAt(DateTimeInterface $createdAt): Entity
     {
-        /** @var RedirectUriInterface $self */
-        $self = $this->setCreatedAtImpl($createdAt);
-
-        return $self;
+        return $this->setCreatedAtImpl($createdAt);
     }
 
     /**
      * @inheritdoc
      */
-    public function setUpdatedAt(DateTimeInterface $createdAt): RedirectUriInterface
+    public function setUpdatedAt(DateTimeInterface $createdAt): Entity
     {
-        /** @var RedirectUriInterface $self */
-        $self = $this->setUpdatedAtImpl($createdAt);
-
-        return $self;
+        return $this->setUpdatedAtImpl($createdAt);
     }
 }

@@ -40,12 +40,10 @@ trait ArrayParserTrait
     {
         // PostgreSql arrays represented as strings
         // '{}' - empty array
-        // '{scope1}' or '{scope1,scope2}' - non-empty array
+        // '{scope1}' or '{scope1,scope2}' - non-empty array,
         // so it should always start with '{' and end with '}'.
         assert(substr($values, 0, 1) === '{' && substr($values, -1) === '}');
 
-        $parsed = strlen($values) === 2 ? [] : explode(',', substr($values, 1, -1));
-
-        return $parsed;
+        return strlen($values) === 2 ? [] : explode(',', substr($values, 1, -1));
     }
 }

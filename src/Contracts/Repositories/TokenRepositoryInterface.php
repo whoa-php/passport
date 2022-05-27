@@ -46,7 +46,7 @@ interface TokenRepositoryInterface
 
     /**
      * @param TokenInterface $token
-     * @param int            $expirationInSeconds
+     * @param int $expirationInSeconds
      *
      * @return void
      */
@@ -60,20 +60,20 @@ interface TokenRepositoryInterface
     public function createToken(TokenInterface $token): TokenInterface;
 
     /**
-     * @param int                       $identifier
+     * @param int $identity
      * @param iterable|ScopeInterface[] $scopes
      *
      * @return void
      */
-    public function bindScopes(int $identifier, iterable $scopes): void;
+    public function bindScopes(int $identity, iterable $scopes): void;
 
     /**
-     * @param int               $identifier
+     * @param int $identity
      * @param iterable|string[] $scopeIdentifiers
      *
      * @return void
      */
-    public function bindScopeIdentifiers(int $identifier, iterable $scopeIdentifiers): void;
+    public function bindScopeIdentifiers(int $identity, iterable $scopeIdentifiers): void;
 
     /**
      * @param int $identifier
@@ -83,15 +83,15 @@ interface TokenRepositoryInterface
     public function unbindScopes(int $identifier): void;
 
     /**
-     * @param int $identifier
+     * @param int $identity
      *
      * @return TokenInterface|null
      */
-    public function read(int $identifier): ?TokenInterface;
+    public function read(int $identity): ?TokenInterface;
 
     /**
      * @param string $code
-     * @param int    $expirationInSeconds
+     * @param int $expirationInSeconds
      *
      * @return TokenInterface|null
      */
@@ -99,7 +99,7 @@ interface TokenRepositoryInterface
 
     /**
      * @param string $tokenValue
-     * @param int    $expirationInSeconds
+     * @param int $expirationInSeconds
      *
      * @return TokenInterface|null
      */
@@ -107,15 +107,15 @@ interface TokenRepositoryInterface
 
     /**
      * @param string $refreshValue
-     * @param int    $expirationInSeconds
+     * @param int $expirationInSeconds
      *
      * @return TokenInterface|null
      */
     public function readByRefresh(string $refreshValue, int $expirationInSeconds): ?TokenInterface;
 
     /**
-     * @param int      $userId
-     * @param int      $expirationInSeconds
+     * @param int $userId
+     * @param int $expirationInSeconds
      * @param int|null $limit
      *
      * @return array
@@ -123,15 +123,20 @@ interface TokenRepositoryInterface
     public function readByUser(int $userId, int $expirationInSeconds, int $limit = null): array;
 
     /**
-     * @param int $identifier
-     *
+     * @param int $identity
      * @return string[]
      */
-    public function readScopeIdentifiers(int $identifier): array;
+    public function readScopeIdentifiers(int $identity): array;
+
+    /**
+     * @param int $identifier
+     * @return array
+     */
+    public function readScopeColumns(int $identifier): array;
 
     /**
      * @param string $tokenValue
-     * @param int    $expirationInSeconds
+     * @param int $expirationInSeconds
      *
      * @return array|null
      */

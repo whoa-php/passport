@@ -1,8 +1,7 @@
 <?php
 
 /**
- * Copyright 2015-2020 info@neomerx.com
- * Modification Copyright 2021-2022 info@whoaphp.com
+ * Copyright 2021-2022 info@whoaphp.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +18,25 @@
 
 declare(strict_types=1);
 
-namespace Whoa\Tests\Passport\Data;
+namespace Whoa\Passport\Contracts\Models;
 
 /**
- * @package Whoa\Tests\Passport
+ * @package Whoa\Passport
  */
-class User
+interface RedirectUriModelInterface
 {
     /** @var string Table name */
-    public const TABLE_NAME = 'users';
+    public const TABLE_NAME = 'oauth_redirect_uris';
+
+    /** @var string Primary key */
+    public const FIELD_ID = 'id_redirect_uri';
+
+    /** @var string Foreign key */
+    public const FIELD_ID_CLIENT = ClientModelInterface::FIELD_ID;
 
     /** @var string Field name */
-    public const FIELD_ID = 'id_user';
+    public const FIELD_VALUE = 'value';
 
-    /** @var string Field name */
-    public const FIELD_NAME = 'name';
+    /** @var string Relationship name */
+    public const REL_CLIENT = 'client';
 }

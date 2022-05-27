@@ -36,13 +36,11 @@ use Psr\Container\ContainerInterface as PsrContainerInterface;
  */
 class PassportContainerConfigurator extends BasePassportContainerConfigurator implements ContainerConfiguratorInterface
 {
-    /** @var callable */
-    const CONFIGURATOR = [self::class, self::CONTAINER_METHOD_NAME];
+    /** @var callable Configurator method name */
+    public const CONFIGURATOR = [self::class, self::CONTAINER_METHOD_NAME];
 
     /**
      * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
     public static function configureContainer(WhoaContainerInterface $container): void
     {
@@ -58,7 +56,7 @@ class PassportContainerConfigurator extends BasePassportContainerConfigurator im
             PsrContainerInterface $container
         ): TokenRepositoryInterface {
             $connection = $container->get(Connection::class);
-            $schema     = $container->get(DatabaseSchemaInterface::class);
+            $schema = $container->get(DatabaseSchemaInterface::class);
 
             return new TokenRepository($connection, $schema);
         };

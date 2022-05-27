@@ -32,19 +32,18 @@ class RedirectUriRepository extends \Whoa\Passport\Repositories\RedirectUriRepos
     /**
      * @var string
      */
-    private $modelClass;
+    private string $modelClass;
 
     /**
-     * @param Connection              $connection
+     * @param Connection $connection
      * @param DatabaseSchemaInterface $databaseSchema
-     * @param string                  $modelClass
+     * @param string $modelClass
      */
     public function __construct(
         Connection $connection,
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = RedirectUri::class
-    )
-    {
+    ) {
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }

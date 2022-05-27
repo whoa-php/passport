@@ -21,10 +21,10 @@ declare(strict_types=1);
 
 namespace Whoa\Tests\Passport\Data;
 
+use Laminas\Diactoros\Response\EmptyResponse;
 use Whoa\Passport\Contracts\Entities\TokenInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response\EmptyResponse;
 
 /**
  * @package Whoa\Tests\Templates
@@ -38,14 +38,14 @@ class PassportSettings extends \Whoa\Passport\Package\PassportSettings
     {
         return [
 
-                static::KEY_APPROVAL_URI_STRING                   => '/approve-uri',
-                static::KEY_ERROR_URI_STRING                      => '/error-uri',
-                static::KEY_DEFAULT_CLIENT_ID                     => 'default_client_id',
-                static::KEY_USER_TABLE_NAME                       => 'user_table',
-                static::KEY_USER_PRIMARY_KEY_NAME                 => 'id_user',
-                static::KEY_USER_CREDENTIALS_VALIDATOR            => [static::class, 'validateUser'],
-                static::KEY_USER_SCOPE_VALIDATOR                  => [static::class, 'validateScope'],
-                static::KEY_TOKEN_CUSTOM_PROPERTIES_PROVIDER      => [self::class, 'tokenCustomPropertiesProvider'],
+                static::KEY_APPROVAL_URI_STRING => '/approve-uri',
+                static::KEY_ERROR_URI_STRING => '/error-uri',
+                static::KEY_DEFAULT_CLIENT_ID => 'default_client_id',
+                static::KEY_USER_TABLE_NAME => 'user_table',
+                static::KEY_USER_PRIMARY_KEY_NAME => 'id_user',
+                static::KEY_USER_CREDENTIALS_VALIDATOR => [static::class, 'validateUser'],
+                static::KEY_USER_SCOPE_VALIDATOR => [static::class, 'validateScope'],
+                static::KEY_TOKEN_CUSTOM_PROPERTIES_PROVIDER => [self::class, 'tokenCustomPropertiesProvider'],
                 static::KEY_FAILED_CUSTOM_UNAUTHENTICATED_FACTORY => [self::class, 'customUnAuthFactory'],
 
             ] + parent::getSettings();
@@ -54,14 +54,17 @@ class PassportSettings extends \Whoa\Passport\Package\PassportSettings
 
     /**
      * @param ContainerInterface $container
-     * @param string             $userName
-     * @param string|null        $password
-     * @param mixed|null         $extras
-     *
+     * @param string $userName
+     * @param string|null $password
+     * @param mixed|null $extras
      * @return int
      */
-    public static function validateUser(ContainerInterface $container, string $userName, ?string $password = null, $extras = null)
-    {
+    public static function validateUser(
+        ContainerInterface $container,
+        string $userName,
+        ?string $password = null,
+        $extras = null
+    ): int {
         assert($container || $userName || $password || $extras);
 
         return 123;
@@ -69,9 +72,8 @@ class PassportSettings extends \Whoa\Passport\Package\PassportSettings
 
     /**
      * @param ContainerInterface $container
-     * @param int                $userId
-     * @param array|null         $scope
-     *
+     * @param int $userId
+     * @param array|null $scope
      * @return null|array
      */
     public static function validateScope(ContainerInterface $container, int $userId, array $scope = null): ?array
@@ -83,8 +85,7 @@ class PassportSettings extends \Whoa\Passport\Package\PassportSettings
 
     /**
      * @param ContainerInterface $container
-     * @param TokenInterface     $token
-     *
+     * @param TokenInterface $token
      * @return array
      */
     public static function tokenCustomPropertiesProvider(ContainerInterface $container, TokenInterface $token): array

@@ -23,7 +23,8 @@ namespace Whoa\Tests\Passport\Adaptors\PostgreSql;
 
 use Doctrine\DBAL\Types\Types;
 use Exception;
-use Whoa\Passport\Adaptors\PostgreSql\Client;
+use Whoa\Passport\Adaptors\PostgreSql\Client as Adaptor;
+use Whoa\Passport\Entities\Client as Entity;
 use Whoa\Passport\Entities\DatabaseSchema;
 use PDO;
 
@@ -36,64 +37,64 @@ class ClientTest extends TestCase
 {
     /**
      * Test client's constructor.
-     *
      * @throws Exception
      */
     public function testConstructor()
     {
         $connection = $this->createConnection();
-        $types      = [
-            Client::FIELD_ID                        => Types::STRING,
-            Client::FIELD_NAME                      => Types::STRING,
-            Client::FIELD_DESCRIPTION               => Types::STRING,
-            Client::FIELD_CREDENTIALS               => Types::STRING,
-            Client::FIELD_IS_CONFIDENTIAL           => Types::BOOLEAN,
-            Client::FIELD_IS_USE_DEFAULT_SCOPE      => Types::BOOLEAN,
-            Client::FIELD_IS_SCOPE_EXCESS_ALLOWED   => Types::BOOLEAN,
-            Client::FIELD_IS_CODE_GRANT_ENABLED     => Types::BOOLEAN,
-            Client::FIELD_IS_IMPLICIT_GRANT_ENABLED => Types::BOOLEAN,
-            Client::FIELD_IS_PASSWORD_GRANT_ENABLED => Types::BOOLEAN,
-            Client::FIELD_IS_CLIENT_GRANT_ENABLED   => Types::BOOLEAN,
-            Client::FIELD_IS_REFRESH_GRANT_ENABLED  => Types::BOOLEAN,
-
-            Client::FIELD_SCOPES        => Types::STRING,
-            Client::FIELD_REDIRECT_URIS => Types::STRING,
+        $types = [
+            Entity::FIELD_ID => Types::STRING,
+            Entity::FIELD_IDENTIFIER => Types::STRING,
+            Entity::FIELD_NAME => Types::STRING,
+            Entity::FIELD_DESCRIPTION => Types::STRING,
+            Entity::FIELD_CREDENTIALS => Types::STRING,
+            Entity::FIELD_IS_CONFIDENTIAL => Types::BOOLEAN,
+            Entity::FIELD_IS_USE_DEFAULT_SCOPE => Types::BOOLEAN,
+            Entity::FIELD_IS_SCOPE_EXCESS_ALLOWED => Types::BOOLEAN,
+            Entity::FIELD_IS_CODE_GRANT_ENABLED => Types::BOOLEAN,
+            Entity::FIELD_IS_IMPLICIT_GRANT_ENABLED => Types::BOOLEAN,
+            Entity::FIELD_IS_PASSWORD_GRANT_ENABLED => Types::BOOLEAN,
+            Entity::FIELD_IS_CLIENT_GRANT_ENABLED => Types::BOOLEAN,
+            Entity::FIELD_IS_REFRESH_GRANT_ENABLED => Types::BOOLEAN,
+            Entity::FIELD_SCOPES => Types::STRING,
+            Entity::FIELD_REDIRECT_URIS => Types::STRING,
         ];
-        $columns    = [
-            Client::FIELD_ID                        => 'some_id',
-            Client::FIELD_NAME                      => 'some_name',
-            Client::FIELD_DESCRIPTION               => 'description',
-            Client::FIELD_CREDENTIALS               => 'secret',
-            Client::FIELD_IS_CONFIDENTIAL           => false,
-            Client::FIELD_IS_USE_DEFAULT_SCOPE      => false,
-            Client::FIELD_IS_SCOPE_EXCESS_ALLOWED   => false,
-            Client::FIELD_IS_CODE_GRANT_ENABLED     => false,
-            Client::FIELD_IS_IMPLICIT_GRANT_ENABLED => false,
-            Client::FIELD_IS_PASSWORD_GRANT_ENABLED => false,
-            Client::FIELD_IS_CLIENT_GRANT_ENABLED   => false,
-            Client::FIELD_IS_REFRESH_GRANT_ENABLED  => false,
-            Client::FIELD_SCOPES                    => '{one,two,three}',
-            Client::FIELD_REDIRECT_URIS             => '{https://acme.foo/redirect}',
+        $columns = [
+            Entity::FIELD_ID => 'some_id',
+            Entity::FIELD_IDENTIFIER => 'some_identifier',
+            Entity::FIELD_NAME => 'some_name',
+            Entity::FIELD_DESCRIPTION => 'description',
+            Entity::FIELD_CREDENTIALS => 'secret',
+            Entity::FIELD_IS_CONFIDENTIAL => false,
+            Entity::FIELD_IS_USE_DEFAULT_SCOPE => false,
+            Entity::FIELD_IS_SCOPE_EXCESS_ALLOWED => false,
+            Entity::FIELD_IS_CODE_GRANT_ENABLED => false,
+            Entity::FIELD_IS_IMPLICIT_GRANT_ENABLED => false,
+            Entity::FIELD_IS_PASSWORD_GRANT_ENABLED => false,
+            Entity::FIELD_IS_CLIENT_GRANT_ENABLED => false,
+            Entity::FIELD_IS_REFRESH_GRANT_ENABLED => false,
+            Entity::FIELD_SCOPES => '{one,two,three}',
+            Entity::FIELD_REDIRECT_URIS => '{https://acme.foo/redirect}',
         ];
 
         $this->createTable($connection, DatabaseSchema::TABLE_CLIENTS, $types);
         $connection->insert(DatabaseSchema::TABLE_CLIENTS, $columns, $types);
 
         // now read from SqLite table as it was PostgreSql view or table
-        $query     = $connection->createQueryBuilder();
+        $query = $connection->createQueryBuilder();
         $statement = $query
             ->select(['*'])
             ->from(DatabaseSchema::TABLE_CLIENTS)
             ->setMaxResults(1)
             ->execute();
-        $statement->setFetchMode(PDO::FETCH_CLASS, Client::class);
+        $statement->setFetchMode(PDO::FETCH_CLASS, Adaptor::class);
         $clients = $statement->fetchAll();
 
         $this->dropTable($connection, DatabaseSchema::TABLE_CLIENTS);
 
         $this->assertCount(1, $clients);
 
-        /** @var Client $client */
+        /** @var Adaptor $client */
         $client = $clients[0];
         $this->assertEquals(['one', 'two', 'three'], $client->getScopeIdentifiers());
     }

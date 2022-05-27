@@ -26,7 +26,8 @@ namespace Whoa\Passport\Adaptors\MySql;
  */
 class Client extends \Whoa\Passport\Entities\Client
 {
-    use ArrayParserTrait, DbDateFormatTrait;
+    use ArrayParserTrait;
+    use DbDateFormatTrait;
 
     /**
      * Constructor.

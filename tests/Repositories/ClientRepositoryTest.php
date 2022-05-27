@@ -70,8 +70,9 @@ class ClientRepositoryTest extends TestCase
 
         $clientRepo->create(
             (new Client())
-                ->setIdentifier('client1')
-                ->setName('client name')
+                ->setIdentifier('default_client')
+                ->setName('default client')
+                ->setDescription('A default OAuth for quick-start.')
                 ->setConfidential()
                 ->enablePasswordGrant()
                 ->setScopeIdentifiers([])
@@ -82,26 +83,35 @@ class ClientRepositoryTest extends TestCase
         /** @var Client $client */
         $client = $clients[0];
         $this->assertTrue($client instanceof ClientInterface);
-        $this->assertEquals('client1', $client->getIdentifier());
-        $this->assertEquals('client name', $client->getName());
+        $this->assertEquals(1, $client->getIdentity());
+        $this->assertEquals('default_client', $client->getIdentifier());
+        $this->assertEquals('default client', $client->getName());
+        $this->assertEquals('A default OAuth for quick-start.', $client->getDescription());
         $this->assertTrue($client->isConfidential());
         $this->assertTrue($client->isPasswordGrantEnabled());
         $this->assertTrue($client->getCreatedAt() instanceof DateTimeImmutable);
         $this->assertNull($client->getUpdatedAt());
 
         $client->setDescription(null);
-
         $clientRepo->update($client);
         $sameClient = $clientRepo->read($client->getIdentifier());
-        $this->assertEquals('client1', $sameClient->getIdentifier());
         $this->assertNull($sameClient->getDescription());
+
+        $client->setRedirectUriStrings(['https://google.com']);
+        $this->assertNotEmpty($redirectUriStrings = $client->getRedirectUriStrings());
+        $this->assertCount(1, $redirectUriStrings);
+        $this->assertEquals('https://google.com', $redirectUriStrings[0]);
+
+        $client->setPublic();
+        $clientRepo->update($client);
+        $sameClient = $clientRepo->read($client->getIdentity());
+        $this->assertFalse($sameClient->isConfidential());
         $this->assertEmpty($sameClient->getScopeIdentifiers());
         $this->assertEmpty($sameClient->getRedirectUriStrings());
         $this->assertTrue($sameClient->getCreatedAt() instanceof DateTimeImmutable);
         $this->assertTrue($sameClient->getUpdatedAt() instanceof DateTimeImmutable);
 
         $clientRepo->delete($sameClient->getIdentifier());
-
         $this->assertEmpty($clientRepo->index());
     }
 
@@ -117,21 +127,31 @@ class ClientRepositoryTest extends TestCase
         [$clientRepo, $scopeRepo] = $this->createRepositories();
 
         $clientRepo->inTransaction(function () use ($clientRepo, $scopeRepo) {
-            $scopeRepo->create($scope1 = (new Scope())->setIdentifier('scope1'));
-            $scopeRepo->create($scope2 = (new Scope())->setIdentifier('scope2'));
-
-            $clientRepo->create($client = (new Client())->setIdentifier('client1')->setName('client name'));
-
-            $clientRepo->bindScopes($client->getIdentifier(), [$scope1, $scope2]);
+            $clientRepo->create(
+                $client = (new Client())->setIdentifier('default_client_1')
+                    ->setName('Default Client 1')
+                    ->setDescription('Description for default client 1')
+            );
+            $scopeRepo->create(
+                $scope1 = (new Scope())->setIdentifier('default_scope_1')
+                    ->setName('Default scope 1')
+                    ->setDescription('Description for default scope 1')
+            );
+            $scopeRepo->create(
+                $scope2 = (new Scope())->setIdentifier('default_scope_2')
+                    ->setName('Default scope 2')
+                    ->setDescription('Description for default scope 2')
+            );
+            $clientRepo->bindScopes($client->getIdentity(), [$scope1, $scope2]);
         });
 
-        $this->assertNotNull($client = $clientRepo->read('client1'));
+        $this->assertNotNull($client = $clientRepo->read(1));
         $this->assertCount(2, $client->getScopeIdentifiers());
         $scopeIdentifiers = $client->getScopeIdentifiers();
         sort($scopeIdentifiers);
-        $this->assertEquals(['scope1', 'scope2'], $scopeIdentifiers);
+        $this->assertEquals(['default_scope_1', 'default_scope_2'], $scopeIdentifiers);
 
-        $clientRepo->unbindScopes($client->getIdentifier());
+        $clientRepo->unbindScopes($client);
         $this->assertNotNull($client = $clientRepo->read($client->getIdentifier()));
         $this->assertCount(0, $client->getScopeIdentifiers());
 
@@ -142,7 +162,7 @@ class ClientRepositoryTest extends TestCase
                 ->setName('client name')
                 ->setConfidential()
                 ->enablePasswordGrant()
-                ->setScopeIdentifiers(['scope1', 'scope2'])
+                ->setScopeIdentifiers(['default_scope_1'])
         );
         $this->assertNotNull($client2);
     }
@@ -165,7 +185,7 @@ class ClientRepositoryTest extends TestCase
     private function createRepositories(): array
     {
         $clientRepo = new ClientRepository($this->getConnection(), $this->getDatabaseSchema());
-        $scopeRepo  = new ScopeRepository($this->getConnection(), $this->getDatabaseSchema());
+        $scopeRepo = new ScopeRepository($this->getConnection(), $this->getDatabaseSchema());
 
         return [$clientRepo, $scopeRepo];
     }

@@ -29,14 +29,14 @@ use Whoa\Contracts\Routing\GroupInterface;
  */
 class PassportRoutesConfigurator implements RoutesConfiguratorInterface
 {
-    /** Route group prefix */
-    const GROUP_PREFIX = '';
+    /** @var string Route group prefix */
+    public const GROUP_PREFIX = '';
 
-    /** Passport URI */
-    const AUTHORIZE_URI = 'authorize';
+    /** @var string Passport URI */
+    public const AUTHORIZE_URI = 'authorize';
 
-    /** Passport URI */
-    const TOKEN_URI = 'token';
+    /** @var string Passport URI */
+    public const TOKEN_URI = 'token';
 
     /**
      * @inheritdoc

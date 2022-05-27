@@ -53,7 +53,7 @@ class PostgreSqlPassportContainerConfigurator extends BasePassportContainerConfi
             PsrContainerInterface $container
         ): TokenRepositoryInterface {
             $connection = $container->get(Connection::class);
-            $schema     = $container->get(DatabaseSchemaInterface::class);
+            $schema = $container->get(DatabaseSchemaInterface::class);
 
             return new TokenRepository($connection, $schema);
         };

@@ -22,144 +22,145 @@ declare(strict_types=1);
 namespace Whoa\Passport\Entities;
 
 use DateTimeInterface;
-use Whoa\Passport\Contracts\Entities\ClientInterface;
-use Whoa\Passport\Models\Client as Model;
+use Whoa\Passport\Contracts\Entities\ClientInterface as Entity;
+use Whoa\Passport\Contracts\Models\ClientModelInterface as Model;
 
 /**
  * @package Whoa\Passport
- *
- * @SuppressWarnings(PHPMD.TooManyMethods)
- * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-abstract class Client extends DatabaseItem implements ClientInterface
+abstract class Client extends DatabaseItem implements Entity
 {
-    /** Field name */
-    const FIELD_ID = Model::FIELD_ID;
+    /** @var string Field name */
+    public const FIELD_ID = Model::FIELD_ID;
 
-    /** Field name */
-    const FIELD_NAME = Model::FIELD_NAME;
+    /** @var string Field name */
+    public const FIELD_IDENTIFIER = Model::FIELD_IDENTIFIER;
 
-    /** Field name */
-    const FIELD_DESCRIPTION = Model::FIELD_DESCRIPTION;
+    /** @var string Field name */
+    public const FIELD_NAME = Model::FIELD_NAME;
 
-    /** Field name */
-    const FIELD_CREDENTIALS = Model::FIELD_CREDENTIALS;
+    /** @var string Field name */
+    public const FIELD_DESCRIPTION = Model::FIELD_DESCRIPTION;
 
-    /** Field name */
-    const FIELD_REDIRECT_URIS = Model::REL_REDIRECT_URIS;
+    /** @var string Field name */
+    public const FIELD_CREDENTIALS = Model::FIELD_CREDENTIALS;
 
-    /** Field name */
-    const FIELD_SCOPES = Model::REL_SCOPES;
+    /** @var string Field name */
+    public const FIELD_REDIRECT_URIS = Model::REL_REDIRECT_URIS;
 
-    /** Field name */
-    const FIELD_IS_CONFIDENTIAL = Model::FIELD_IS_CONFIDENTIAL;
+    /** @var string Field name */
+    public const FIELD_SCOPES = Model::REL_SCOPES;
 
-    /** Field name */
-    const FIELD_IS_USE_DEFAULT_SCOPE = Model::FIELD_IS_USE_DEFAULT_SCOPE;
+    /** @var string Field name */
+    public const FIELD_IS_CONFIDENTIAL = Model::FIELD_IS_CONFIDENTIAL;
 
-    /** Field name */
-    const FIELD_IS_SCOPE_EXCESS_ALLOWED = Model::FIELD_IS_SCOPE_EXCESS_ALLOWED;
+    /** @var string Field name */
+    public const FIELD_IS_USE_DEFAULT_SCOPE = Model::FIELD_IS_USE_DEFAULT_SCOPE;
 
-    /** Field name */
-    const FIELD_IS_CODE_GRANT_ENABLED = Model::FIELD_IS_CODE_GRANT_ENABLED;
+    /** @var string Field name */
+    public const FIELD_IS_SCOPE_EXCESS_ALLOWED = Model::FIELD_IS_SCOPE_EXCESS_ALLOWED;
 
-    /** Field name */
-    const FIELD_IS_IMPLICIT_GRANT_ENABLED = Model::FIELD_IS_IMPLICIT_GRANT_ENABLED;
+    /** @var string Field name */
+    public const FIELD_IS_CODE_GRANT_ENABLED = Model::FIELD_IS_CODE_GRANT_ENABLED;
 
-    /** Field name */
-    const FIELD_IS_PASSWORD_GRANT_ENABLED = Model::FIELD_IS_PASSWORD_GRANT_ENABLED;
+    /** @var string Field name */
+    public const FIELD_IS_IMPLICIT_GRANT_ENABLED = Model::FIELD_IS_IMPLICIT_GRANT_ENABLED;
 
-    /** Field name */
-    const FIELD_IS_CLIENT_GRANT_ENABLED = Model::FIELD_IS_CLIENT_GRANT_ENABLED;
+    /** @var string Field name */
+    public const FIELD_IS_PASSWORD_GRANT_ENABLED = Model::FIELD_IS_PASSWORD_GRANT_ENABLED;
 
-    /** Field name */
-    const FIELD_IS_REFRESH_GRANT_ENABLED = Model::FIELD_IS_REFRESH_GRANT_ENABLED;
+    /** @var string Field name */
+    public const FIELD_IS_CLIENT_GRANT_ENABLED = Model::FIELD_IS_CLIENT_GRANT_ENABLED;
+
+    /** @var string Field name */
+    public const FIELD_IS_REFRESH_GRANT_ENABLED = Model::FIELD_IS_REFRESH_GRANT_ENABLED;
+
+    /**
+     * @var int
+     */
+    private int $identityField = 0;
 
     /**
      * @var string
      */
-    private $identifierField = '';
+    private string $identifierField = '';
 
     /**
      * @var string|null
      */
-    private $nameField = null;
+    private ?string $nameField = null;
 
     /**
      * @var string|null
      */
-    private $descriptionField = null;
+    private ?string $descriptionField = null;
 
     /**
      * @var string|null
      */
-    private $credentialsField = null;
+    private ?string $credentialsField = null;
 
     /**
      * @var string[]
      */
-    private $redirectUriStrings;
+    private array $redirectUriStrings;
 
     /**
      * @var string[]
      */
-    private $scopeIdentifiers;
+    private array $scopeIdentifiers;
 
     /**
      * @var bool
      */
-    private $isConfidentialField = false;
+    private bool $isConfidentialField = false;
 
     /**
      * @var bool
      */
-    private $isUseDefaultScopeField = false;
+    private bool $isUseDefaultScopeField = false;
 
     /**
      * @var bool
      */
-    private $isScopeExcessAllowedField = false;
+    private bool $isScopeExcessAllowedField = false;
 
     /**
      * @var bool
      */
-    private $isCodeAuthEnabledField = false;
+    private bool $isCodeAuthEnabledField = false;
 
     /**
      * @var bool
      */
-    private $isImplicitAuthEnabledField = false;
+    private bool $isImplicitAuthEnabledField = false;
 
     /**
      * @var bool
      */
-    private $isPasswordGrantEnabledField = false;
+    private bool $isPasswordGrantEnabledField = false;
 
     /**
      * @var bool
      */
-    private $isClientGrantEnabledField = false;
+    private bool $isClientGrantEnabledField = false;
 
     /**
      * @var bool
      */
-    private $isRefreshGrantEnabledField = false;
+    private bool $isRefreshGrantEnabledField = false;
 
     /**
      * Constructor.
-     *
-     * @SuppressWarnings(PHPMD.ElseExpression)
      */
     public function __construct()
     {
         if ($this->hasDynamicProperty(static::FIELD_ID) === true) {
-            $this
-                ->setIdentifier($this->{static::FIELD_ID})
+            $this->setIdentity((int)$this->{static::FIELD_ID})
+                ->setIdentifier($this->{static::FIELD_IDENTIFIER})
                 ->setName($this->{static::FIELD_NAME})
                 ->setDescription($this->{static::FIELD_DESCRIPTION})
-                ->setCredentials($this->{static::FIELD_CREDENTIALS});
-            $this
+                ->setCredentials($this->{static::FIELD_CREDENTIALS})
                 ->parseIsConfidential($this->{static::FIELD_IS_CONFIDENTIAL})
                 ->parseIsUseDefaultScope($this->{static::FIELD_IS_USE_DEFAULT_SCOPE})
                 ->parseIsScopeExcessAllowed($this->{static::FIELD_IS_SCOPE_EXCESS_ALLOWED})
@@ -169,9 +170,26 @@ abstract class Client extends DatabaseItem implements ClientInterface
                 ->parseIsClientGrantEnabled($this->{static::FIELD_IS_CLIENT_GRANT_ENABLED})
                 ->parseIsRefreshGrantEnabled($this->{static::FIELD_IS_REFRESH_GRANT_ENABLED});
         } else {
-            $this->
-            setScopeIdentifiers([])->setRedirectUriStrings([]);
+            $this->setScopeIdentifiers([])->setRedirectUriStrings([]);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getIdentity(): int
+    {
+        return $this->identityField;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setIdentity(int $identity): Entity
+    {
+        $this->identityField = $identity;
+
+        return $this;
     }
 
     /**
@@ -185,7 +203,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setIdentifier(string $identifier): ClientInterface
+    public function setIdentifier(string $identifier): Entity
     {
         $this->identifierField = $identifier;
 
@@ -195,9 +213,9 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritDoc
      */
-    public function setUuid($uuid = null): ClientInterface
+    public function setUuid($uuid = null): Entity
     {
-        /** @var ClientInterface $self */
+        /** @var Entity $self */
         $self = $this->setUuidImpl($uuid);
 
         return $this;
@@ -214,7 +232,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setName(string $name): ClientInterface
+    public function setName(?string $name = null): Entity
     {
         $this->nameField = $name;
 
@@ -232,7 +250,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setDescription(string $description = null): ClientInterface
+    public function setDescription(?string $description = null): Entity
     {
         $this->descriptionField = $description;
 
@@ -250,7 +268,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setCredentials(string $credentials = null): ClientInterface
+    public function setCredentials(?string $credentials = null): Entity
     {
         $this->credentialsField = $credentials;
 
@@ -276,7 +294,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setRedirectUriStrings(array $redirectUriStrings): ClientInterface
+    public function setRedirectUriStrings(array $redirectUriStrings): Entity
     {
         $this->redirectUriStrings = $redirectUriStrings;
 
@@ -292,11 +310,9 @@ abstract class Client extends DatabaseItem implements ClientInterface
     }
 
     /**
-     * @param string[] $scopeIdentifiers
-     *
-     * @return ClientInterface
+     * @inheritDoc
      */
-    public function setScopeIdentifiers(array $scopeIdentifiers): ClientInterface
+    public function setScopeIdentifiers(iterable $scopeIdentifiers): Entity
     {
         $this->scopeIdentifiers = $scopeIdentifiers;
 
@@ -322,7 +338,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setConfidential(): ClientInterface
+    public function setConfidential(): Entity
     {
         $this->isConfidentialField = true;
 
@@ -332,7 +348,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setPublic(): ClientInterface
+    public function setPublic(): Entity
     {
         $this->isConfidentialField = false;
 
@@ -350,7 +366,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function useDefaultScopesOnEmptyRequest(): ClientInterface
+    public function useDefaultScopesOnEmptyRequest(): Entity
     {
         $this->isUseDefaultScopeField = true;
 
@@ -360,7 +376,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function doNotUseDefaultScopesOnEmptyRequest(): ClientInterface
+    public function doNotUseDefaultScopesOnEmptyRequest(): Entity
     {
         $this->isUseDefaultScopeField = false;
 
@@ -378,7 +394,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function enableScopeExcess(): ClientInterface
+    public function enableScopeExcess(): Entity
     {
         $this->isScopeExcessAllowedField = true;
 
@@ -388,7 +404,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function disableScopeExcess(): ClientInterface
+    public function disableScopeExcess(): Entity
     {
         $this->isScopeExcessAllowedField = false;
 
@@ -406,7 +422,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function enableCodeGrant(): ClientInterface
+    public function enableCodeGrant(): Entity
     {
         $this->isCodeAuthEnabledField = true;
 
@@ -416,7 +432,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function disableCodeGrant(): ClientInterface
+    public function disableCodeGrant(): Entity
     {
         $this->isCodeAuthEnabledField = false;
 
@@ -434,7 +450,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function enableImplicitGrant(): ClientInterface
+    public function enableImplicitGrant(): Entity
     {
         $this->isImplicitAuthEnabledField = true;
 
@@ -444,7 +460,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function disableImplicitGrant(): ClientInterface
+    public function disableImplicitGrant(): Entity
     {
         $this->isImplicitAuthEnabledField = false;
 
@@ -462,7 +478,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function enablePasswordGrant(): ClientInterface
+    public function enablePasswordGrant(): Entity
     {
         $this->isPasswordGrantEnabledField = true;
 
@@ -472,7 +488,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function disablePasswordGrant(): ClientInterface
+    public function disablePasswordGrant(): Entity
     {
         $this->isPasswordGrantEnabledField = false;
 
@@ -490,7 +506,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function enableClientGrant(): ClientInterface
+    public function enableClientGrant(): Entity
     {
         $this->isClientGrantEnabledField = true;
 
@@ -500,7 +516,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function disableClientGrant(): ClientInterface
+    public function disableClientGrant(): Entity
     {
         $this->isClientGrantEnabledField = false;
 
@@ -518,7 +534,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function enableRefreshGrant(): ClientInterface
+    public function enableRefreshGrant(): Entity
     {
         $this->isRefreshGrantEnabledField = true;
 
@@ -528,7 +544,7 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function disableRefreshGrant(): ClientInterface
+    public function disableRefreshGrant(): Entity
     {
         $this->isRefreshGrantEnabledField = false;
 
@@ -538,28 +554,21 @@ abstract class Client extends DatabaseItem implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function setCreatedAt(DateTimeInterface $createdAt): ClientInterface
+    public function setCreatedAt(?DateTimeInterface $createdAt = null): Entity
     {
-        /** @var ClientInterface $self */
-        $self = $this->setCreatedAtImpl($createdAt);
-
-        return $self;
+        return $this->setCreatedAtImpl($createdAt);
     }
 
     /**
      * @inheritdoc
      */
-    public function setUpdatedAt(DateTimeInterface $createdAt): ClientInterface
+    public function setUpdatedAt(?DateTimeInterface $createdAt = null): Entity
     {
-        /** @var ClientInterface $self */
-        $self = $this->setUpdatedAtImpl($createdAt);
-
-        return $self;
+        return $this->setUpdatedAtImpl($createdAt);
     }
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsConfidential(string $value): Client
@@ -571,7 +580,6 @@ abstract class Client extends DatabaseItem implements ClientInterface
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsUseDefaultScope(string $value): Client
@@ -583,7 +591,6 @@ abstract class Client extends DatabaseItem implements ClientInterface
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsScopeExcessAllowed(string $value): Client
@@ -607,7 +614,6 @@ abstract class Client extends DatabaseItem implements ClientInterface
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsImplicitAuthEnabled(string $value): Client
@@ -619,7 +625,6 @@ abstract class Client extends DatabaseItem implements ClientInterface
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsPasswordGrantEnabled(string $value): Client
@@ -631,7 +636,6 @@ abstract class Client extends DatabaseItem implements ClientInterface
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsClientGrantEnabled(string $value): Client
@@ -643,7 +647,6 @@ abstract class Client extends DatabaseItem implements ClientInterface
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsRefreshGrantEnabled(string $value): Client

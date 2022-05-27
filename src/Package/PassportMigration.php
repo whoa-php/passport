@@ -22,11 +22,14 @@ declare(strict_types=1);
 namespace Whoa\Passport\Package;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Whoa\Contracts\Data\MigrationInterface;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Traits\DatabaseSchemaMigrationTrait;
 use Psr\Container\ContainerInterface;
+
 use function assert;
 
 /**
@@ -39,7 +42,7 @@ class PassportMigration implements MigrationInterface
     /**
      * @var ContainerInterface
      */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * @inheritdoc
@@ -74,13 +77,13 @@ class PassportMigration implements MigrationInterface
      */
     protected function getContainer(): ContainerInterface
     {
-        assert($this->container !== null);
-
         return $this->container;
     }
 
     /**
      * @return Connection
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getConnection(): Connection
     {
@@ -89,6 +92,8 @@ class PassportMigration implements MigrationInterface
 
     /**
      * @return DatabaseSchemaInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getDatabaseSchema(): DatabaseSchemaInterface
     {

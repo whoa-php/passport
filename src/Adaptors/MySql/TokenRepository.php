@@ -37,19 +37,18 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
     /**
      * @var string
      */
-    private $modelClass;
+    private string $modelClass;
 
     /**
-     * @param Connection              $connection
+     * @param Connection $connection
      * @param DatabaseSchemaInterface $databaseSchema
-     * @param string                  $modelClass
+     * @param string $modelClass
      */
     public function __construct(
         Connection $connection,
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Token::class
-    )
-    {
+    ) {
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }
@@ -63,8 +62,8 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
     {
         try {
             $schema = $this->getDatabaseSchema();
-            $query  = $this->getConnection()->createQueryBuilder();
-            $query  = $this->addExpirationCondition(
+            $query = $this->getConnection()->createQueryBuilder();
+            $query = $this->addExpirationCondition(
                 $query->select(['*'])
                     ->from($schema->getPassportView())
                     ->where($schema->getTokensValueColumn() . '=' . $this->createTypedParameter($query, $tokenValue))
@@ -79,14 +78,14 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
 
             $result = null;
             if ($data !== false) {
-                $scopesColumn        = $schema->getTokensViewScopesColumn();
-                $scopeList           = $data[$scopesColumn];
+                $scopesColumn = $schema->getTokensViewScopesColumn();
+                $scopeList = $data[$scopesColumn];
                 $data[$scopesColumn] = $this->parseArray($scopeList);
-                $result              = $data;
+                $result = $data;
             }
 
             return $result;
-        } /** @noinspection PhpRedundantCatchClauseInspection */ catch (DBALException $exception) {
+        } catch (DBALException $exception) {
             $message = 'Passport reading failed.';
             throw new RepositoryException($message, 0, $exception);
         }

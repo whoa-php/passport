@@ -23,6 +23,11 @@ namespace Whoa\Passport\Integration;
 
 use Doctrine\DBAL\Connection;
 use Exception;
+use Laminas\Diactoros\Response\RedirectResponse;
+use Laminas\Diactoros\Uri;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Whoa\Contracts\Settings\Packages\PassportSettingsInterface;
 use Whoa\Contracts\Settings\SettingsProviderInterface;
 use Whoa\OAuthServer\Contracts\ClientInterface;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
@@ -34,95 +39,90 @@ use Whoa\Passport\Package\PassportSettings as C;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
-use Zend\Diactoros\Response\RedirectResponse;
-use Zend\Diactoros\Uri;
+
 use function array_filter;
 use function assert;
 use function bin2hex;
 use function call_user_func;
 use function implode;
-use function is_int;
-use function is_string;
 use function password_verify;
 use function random_bytes;
 use function uniqid;
 
 /**
  * @package Whoa\Passport
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 abstract class BasePassportServerIntegration implements PassportServerIntegrationInterface
 {
-    /** Approval parameter */
-    const SCOPE_APPROVAL_TYPE = 'type';
+    /** @var string Approval parameter */
+    public const SCOPE_APPROVAL_TYPE = 'type';
 
-    /** Approval parameter */
-    const SCOPE_APPROVAL_CLIENT_ID = 'client_id';
+    /** @var string Approval parameter */
+    public const SCOPE_APPROVAL_CLIENT_ID = 'client_id';
 
-    /** Approval parameter */
-    const SCOPE_APPROVAL_CLIENT_NAME = 'client_name';
+    /** @var string Approval parameter */
+    public const SCOPE_APPROVAL_CLIENT_NAME = 'client_name';
 
-    /** Approval parameter */
-    const SCOPE_APPROVAL_REDIRECT_URI = 'redirect_uri';
+    /** @var string Approval parameter */
+    public const SCOPE_APPROVAL_REDIRECT_URI = 'redirect_uri';
 
-    /** Approval parameter */
-    const SCOPE_APPROVAL_IS_SCOPE_MODIFIED = 'is_scope_modified';
+    /** @var string Approval parameter */
+    public const SCOPE_APPROVAL_IS_SCOPE_MODIFIED = 'is_scope_modified';
 
-    /** Approval parameter */
-    const SCOPE_APPROVAL_SCOPE = 'scope';
+    /** @var string Approval parameter */
+    public const SCOPE_APPROVAL_SCOPE = 'scope';
 
-    /** Approval parameter */
-    const SCOPE_APPROVAL_STATE = 'state';
+    /** @var string Approval parameter */
+    public const SCOPE_APPROVAL_STATE = 'state';
 
     /**
      * @var ContainerInterface
      */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * @var array
      */
-    private $settings;
+    private array $settings;
 
     /**
      * @var string
      */
-    private $defaultClientId;
+    private string $defaultClientId;
 
     /**
      * @var Connection
      */
-    private $connection;
+    private Connection $connection;
 
     /**
-     * @var DatabaseSchemaInterface
+     * @var DatabaseSchemaInterface|null
      */
-    private $databaseSchema;
-
-    /**
-     * @var string
-     */
-    private $approvalUriString;
+    private ?DatabaseSchemaInterface $databaseSchema = null;
 
     /**
      * @var string
      */
-    private $errorUriString;
+    private string $approvalUriString;
+
+    /**
+     * @var string
+     */
+    private string $errorUriString;
 
     /**
      * @var int
      */
-    private $codeExpiration;
+    private int $codeExpiration;
 
     /**
      * @var int
      */
-    private $tokenExpiration;
+    private int $tokenExpiration;
     /**
      * @var bool
      */
-    private $isRenewRefreshValue;
+    private bool $isRenewRefreshValue;
 
     /**
      * @var callable|null
@@ -131,30 +131,32 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
 
     /**
      * @param ContainerInterface $container
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->settings  = $container->get(SettingsProviderInterface::class)->get(C::class);
+        $this->settings = $container->get(SettingsProviderInterface::class)->get(C::class);
 
         /** @var Connection $connection */
         $connection = $container->get(Connection::class);
 
         /** @var callable|null $customPropProvider */
-        $customPropProvider = $this->settings[C::KEY_TOKEN_CUSTOM_PROPERTIES_PROVIDER] ?? null;
-        $wrapper            = $customPropProvider !== null ?
+        $customPropProvider = $this->settings[PassportSettingsInterface::KEY_TOKEN_CUSTOM_PROPERTIES_PROVIDER] ?? null;
+        $wrapper = $customPropProvider !== null ?
             function (TokenInterface $token) use ($container, $customPropProvider): array {
                 return call_user_func($customPropProvider, $container, $token);
             } : null;
 
-        $this->defaultClientId     = $this->settings[C::KEY_DEFAULT_CLIENT_ID];
-        $this->connection          = $connection;
-        $this->approvalUriString   = $this->settings[C::KEY_APPROVAL_URI_STRING];
-        $this->errorUriString      = $this->settings[C::KEY_ERROR_URI_STRING];
-        $this->codeExpiration      = $this->settings[C::KEY_CODE_EXPIRATION_TIME_IN_SECONDS] ?? 600;
-        $this->tokenExpiration     = $this->settings[C::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS] ?? 3600;
-        $this->isRenewRefreshValue = $this->settings[C::KEY_RENEW_REFRESH_VALUE_ON_TOKEN_REFRESH] ?? false;
-        $this->customPropProvider  = $wrapper;
+        $this->defaultClientId = $this->settings[PassportSettingsInterface::KEY_DEFAULT_CLIENT_ID];
+        $this->connection = $connection;
+        $this->approvalUriString = $this->settings[PassportSettingsInterface::KEY_APPROVAL_URI_STRING];
+        $this->errorUriString = $this->settings[PassportSettingsInterface::KEY_ERROR_URI_STRING];
+        $this->codeExpiration = $this->settings[PassportSettingsInterface::KEY_CODE_EXPIRATION_TIME_IN_SECONDS] ?? 600;
+        $this->tokenExpiration = $this->settings[PassportSettingsInterface::KEY_TOKEN_EXPIRATION_TIME_IN_SECONDS] ?? 3600;
+        $this->isRenewRefreshValue = $this->settings[PassportSettingsInterface::KEY_RENEW_REFRESH_VALUE_ON_TOKEN_REFRESH] ?? false;
+        $this->customPropProvider = $wrapper;
     }
 
     /**
@@ -162,10 +164,9 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
      */
     public function validateUserId(string $userName, ?string $password = null, $extras = null)
     {
-        $validator    = $this->settings[C::KEY_USER_CREDENTIALS_VALIDATOR];
-        $nullOrUserId = call_user_func($validator, $this->getContainer(), $userName, $password, $extras);
+        $validator = $this->settings[PassportSettingsInterface::KEY_USER_CREDENTIALS_VALIDATOR];
 
-        return $nullOrUserId;
+        return call_user_func($validator, $this->getContainer(), $userName, $password, $extras);
     }
 
     /**
@@ -173,10 +174,9 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
      */
     public function verifyAllowedUserScope(int $userIdentity, array $scope = null): ?array
     {
-        $validator   = $this->settings[C::KEY_USER_SCOPE_VALIDATOR];
-        $nullOrScope = call_user_func($validator, $this->getContainer(), $userIdentity, $scope);
+        $validator = $this->settings[PassportSettingsInterface::KEY_USER_SCOPE_VALIDATOR];
 
-        return $nullOrScope;
+        return call_user_func($validator, $this->getContainer(), $userIdentity, $scope);
     }
 
     /**
@@ -196,7 +196,7 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
     {
         $codeValue = bin2hex(random_bytes(16)) . uniqid();
 
-        assert(is_string($codeValue) === true && empty($codeValue) === false);
+        assert(empty($codeValue) === false);
 
         return $codeValue;
     }
@@ -208,15 +208,15 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
      */
     public function generateTokenValues(TokenInterface $token): array
     {
-        $tokenValue     = bin2hex(random_bytes(16)) . uniqid();
-        $tokenType      = 'bearer';
+        $tokenValue = bin2hex(random_bytes(16)) . uniqid();
+        $tokenType = 'bearer';
         $tokenExpiresIn = $this->getTokenExpirationPeriod();
-        $refreshValue   = bin2hex(random_bytes(16)) . uniqid();
+        $refreshValue = bin2hex(random_bytes(16)) . uniqid();
 
-        assert(is_string($tokenValue) === true && empty($tokenValue) === false);
-        assert(is_string($tokenType) === true && empty($tokenType) === false);
-        assert(is_int($tokenExpiresIn) === true && $tokenExpiresIn > 0);
-        assert($refreshValue === null || (is_string($refreshValue) === true && empty($refreshValue) === false));
+        assert(empty($tokenValue) === false);
+        assert(empty($tokenType) === false);
+        assert($tokenExpiresIn > 0);
+        assert(empty($refreshValue) === false);
 
         return [$tokenValue, $tokenType, $tokenExpiresIn, $refreshValue];
     }
@@ -253,10 +253,8 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
         return new RedirectResponse($this->getErrorUriString());
     }
 
-    /** @noinspection PhpTooManyParametersInspection
+    /**
      * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function createAskResourceOwnerForApprovalResponse(
         string $type,
@@ -266,21 +264,20 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
         array $scopeList = null,
         string $state = null,
         array $extraParameters = []
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         /** @var Client $client */
         assert($client instanceof Client);
 
         // TODO think if we can receive objects instead of individual properties
         $scopeList = empty($scopeList) === true ? null : implode(' ', $scopeList);
-        $filtered  = array_filter([
-            self::SCOPE_APPROVAL_TYPE              => $type,
-            self::SCOPE_APPROVAL_CLIENT_ID         => $client->getIdentifier(),
-            self::SCOPE_APPROVAL_CLIENT_NAME       => $client->getName(),
-            self::SCOPE_APPROVAL_REDIRECT_URI      => $redirectUri,
+        $filtered = array_filter([
+            self::SCOPE_APPROVAL_TYPE => $type,
+            self::SCOPE_APPROVAL_CLIENT_ID => $client->getIdentifier(),
+            self::SCOPE_APPROVAL_CLIENT_NAME => $client->getName(),
+            self::SCOPE_APPROVAL_REDIRECT_URI => $redirectUri,
             self::SCOPE_APPROVAL_IS_SCOPE_MODIFIED => $isScopeModified,
-            self::SCOPE_APPROVAL_SCOPE             => $scopeList,
-            self::SCOPE_APPROVAL_STATE             => $state,
+            self::SCOPE_APPROVAL_SCOPE => $scopeList,
+            self::SCOPE_APPROVAL_STATE => $state,
         ], function ($value) {
             return $value !== null;
         });
@@ -309,16 +306,15 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
 
     /**
      * @param string $uri
-     * @param array  $data
+     * @param array $data
      *
      * @return UriInterface
      */
     protected function createRedirectUri(string $uri, array $data): UriInterface
     {
-        $query  = http_build_query($data, '', '&', PHP_QUERY_RFC3986);
-        $result = (new Uri($uri))->withQuery($query);
+        $query = http_build_query($data, '', '&', PHP_QUERY_RFC3986);
 
-        return $result;
+        return (new Uri($uri))->withQuery($query);
     }
 
     /**

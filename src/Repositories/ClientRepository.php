@@ -22,10 +22,13 @@ declare(strict_types=1);
 namespace Whoa\Passport\Repositories;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\Driver\Exception as DBALDriverException;
 use Whoa\Passport\Contracts\Entities\ClientInterface;
-use Whoa\Passport\Contracts\Entities\ScopeInterface;
 use Whoa\Passport\Contracts\Repositories\ClientRepositoryInterface;
+use Whoa\Passport\Contracts\Repositories\ScopeRepositoryInterface;
 use Whoa\Passport\Exceptions\RepositoryException;
+use Whoa\Passport\Traits\Repository\ScopeRepositoryTrait;
+
 use function assert;
 
 /**
@@ -33,6 +36,16 @@ use function assert;
  */
 abstract class ClientRepository extends BaseRepository implements ClientRepositoryInterface
 {
+    use ScopeRepositoryTrait;
+
+    /**
+     * Constructor
+     */
+    public function __construct(ScopeRepositoryInterface $scopeRepo)
+    {
+        $this->setScopeRepository($scopeRepo);
+    }
+
     /**
      * @inheritdoc
      */
@@ -43,42 +56,42 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
-     *
-     * @SuppressWarnings(PHPMD.ElseExpression)
+     * @param ClientInterface $client
+     * @return ClientInterface
+     * @throws DBALDriverException
      */
     public function create(ClientInterface $client): ClientInterface
     {
         try {
-            $now    = $this->ignoreException(function (): DateTimeImmutable {
+            $now = $this->ignoreException(function (): DateTimeImmutable {
                 return new DateTimeImmutable();
             });
             $schema = $this->getDatabaseSchema();
             $values = [
-                $schema->getClientsIdentityColumn()               => $client->getIdentifier(),
-                $schema->getClientsUuidColumn()                   => $client->getUuid(),
-                $schema->getClientsNameColumn()                   => $client->getName(),
-                $schema->getClientsDescriptionColumn()            => $client->getDescription(),
-                $schema->getClientsCredentialsColumn()            => $client->getCredentials(),
-                $schema->getClientsIsConfidentialColumn()         => $client->isConfidential(),
-                $schema->getClientsIsScopeExcessAllowedColumn()   => $client->isScopeExcessAllowed(),
-                $schema->getClientsIsUseDefaultScopeColumn()      => $client->isUseDefaultScopesOnEmptyRequest(),
-                $schema->getClientsIsCodeGrantEnabledColumn()     => $client->isCodeGrantEnabled(),
+                $schema->getClientsIdentifierColumn() => $client->getIdentifier(),
+                $schema->getClientsUuidColumn() => $client->getUuid(),
+                $schema->getClientsNameColumn() => $client->getName(),
+                $schema->getClientsDescriptionColumn() => $client->getDescription(),
+                $schema->getClientsCredentialsColumn() => $client->getCredentials(),
+                $schema->getClientsIsConfidentialColumn() => $client->isConfidential(),
+                $schema->getClientsIsScopeExcessAllowedColumn() => $client->isScopeExcessAllowed(),
+                $schema->getClientsIsUseDefaultScopeColumn() => $client->isUseDefaultScopesOnEmptyRequest(),
+                $schema->getClientsIsCodeGrantEnabledColumn() => $client->isCodeGrantEnabled(),
                 $schema->getClientsIsImplicitGrantEnabledColumn() => $client->isImplicitGrantEnabled(),
                 $schema->getClientsIsPasswordGrantEnabledColumn() => $client->isPasswordGrantEnabled(),
-                $schema->getClientsIsClientGrantEnabledColumn()   => $client->isClientGrantEnabled(),
-                $schema->getClientsIsRefreshGrantEnabledColumn()  => $client->isRefreshGrantEnabled(),
-                $schema->getClientsCreatedAtColumn()              => $now,
+                $schema->getClientsIsClientGrantEnabledColumn() => $client->isClientGrantEnabled(),
+                $schema->getClientsIsRefreshGrantEnabledColumn() => $client->isRefreshGrantEnabled(),
+                $schema->getClientsCreatedAtColumn() => $now,
             ];
 
-            $identifier = $client->getIdentifier();
             if (empty($scopeIdentifiers = $client->getScopeIdentifiers()) === true) {
                 $this->createResource($values);
+                $client->setIdentity($this->getLastInsertId());
             } else {
-                $this->inTransaction(function () use ($identifier, $values, $scopeIdentifiers) {
+                $this->inTransaction(function () use ($client, $values, $scopeIdentifiers) {
                     $this->createResource($values);
-                    $this->bindScopeIdentifiers($identifier, $scopeIdentifiers);
+                    $client->setIdentity($identity = $this->getLastInsertId());
+                    $this->bindScopeIdentifiers($identity, $scopeIdentifiers);
                 });
             }
             $client->setUuid()->setCreatedAt($now);
@@ -91,61 +104,37 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
     }
 
     /**
-     * @inheritdoc
-     *
-     * @throws RepositoryException
+     * @inheritDoc
+     * @throws DBALDriverException
      */
-    public function bindScopes(string $identifier, iterable $scopes): void
+    public function bindScopes($client, iterable $scopes): void
     {
-        $getIdentifiers = function (iterable $scopes): iterable {
-            foreach ($scopes as $scope) {
-                /** @var ScopeInterface $scope */
-                assert($scope instanceof ScopeInterface);
-                yield $scope->getIdentifier();
-            }
-        };
-
-        $this->bindScopeIdentifiers($identifier, $getIdentifiers($scopes));
+        assert(($identity = $this->queryIdentity($client)) !== null);
+        $this->bindScopeIdentities($identity, $this->queryScopeIdentities($scopes));
     }
 
     /**
-     * @param string   $identifier
-     * @param iterable $scopeIdentifiers
-     *
-     * @return void
-     *
-     * @throws RepositoryException
+     * @inheritDoc
+     * @throws DBALDriverException
      */
-    public function bindScopeIdentifiers(string $identifier, iterable $scopeIdentifiers): void
+    public function bindScopeIdentifiers($client, iterable $scopeIdentifiers): void
     {
-        try {
-            $schema = $this->getDatabaseSchema();
-            $this->createBelongsToManyRelationship(
-                $identifier,
-                $scopeIdentifiers,
-                $schema->getClientsScopesTable(),
-                $schema->getClientsScopesClientIdentityColumn(),
-                $schema->getClientsScopesScopeIdentityColumn()
-            );
-        } catch (RepositoryException $exception) {
-            $message = 'Binding client scopes failed.';
-            throw new RepositoryException($message, 0, $exception);
-        }
+        assert(($identity = $this->queryIdentity($client)) !== null);
+        $this->bindScopeIdentities($identity, $this->queryScopeIdentities($scopeIdentifiers));
     }
 
     /**
-     * @inheritdoc
-     *
-     * @throws RepositoryException
+     * @inheritDoc
      */
-    public function unbindScopes(string $identifier): void
+    public function unbindScopes($client): void
     {
         try {
+            assert(($identity = $this->queryIdentity($client)) != null);
             $schema = $this->getDatabaseSchema();
-            $this->deleteBelongsToManyRelationshipIdentifiers(
+            $this->deleteBelongsToManyRelationshipIdentities(
                 $schema->getClientsScopesTable(),
                 $schema->getClientsScopesClientIdentityColumn(),
-                $identifier
+                $identity
             );
         } catch (RepositoryException $exception) {
             $message = 'Unbinding client scopes failed.';
@@ -155,13 +144,20 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
-    public function read(string $identifier): ?ClientInterface
+    public function read($index): ?ClientInterface
     {
         try {
-            return $this->readResource($identifier);
+            assert($index instanceof ClientInterface || is_string($index) === true || is_int($index) === true);
+            if ($index instanceof ClientInterface) {
+                return $index;
+            } elseif (is_int($index) === true) {
+                return $this->readResource($index);
+            } elseif (is_string($index) === true) {
+                return $this->readResource($index, $this->getIdentifierKeyName());
+            }
+
+            return null;
         } catch (RepositoryException $exception) {
             $message = 'Reading client failed.';
             throw new RepositoryException($message, 0, $exception);
@@ -170,18 +166,23 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
-    public function readScopeIdentifiers(string $identifier): array
+    public function readScopeIdentifiers($client): array
     {
         try {
+            assert($client !== null);
             $schema = $this->getDatabaseSchema();
-            return $this->readBelongsToManyRelationshipIdentifiers(
-                $identifier,
+            $scopeIdentities = $this->readBelongsToManyRelationshipIdentifiers(
+                $client instanceof ClientInterface ? $client->getIdentity() : $this->queryIdentity($client),
                 $schema->getClientsScopesTable(),
                 $schema->getClientsScopesClientIdentityColumn(),
                 $schema->getClientsScopesScopeIdentityColumn()
+            );
+
+            return iterator_to_array(
+                $this->queryScopeIdentifiers(
+                    array_map('intval', $scopeIdentities)
+                )
             );
         } catch (RepositoryException $exception) {
             $message = 'Reading client scope identifiers failed.';
@@ -191,8 +192,6 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
     public function readRedirectUriStrings(string $identifier): array
     {
@@ -216,22 +215,22 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
     public function update(ClientInterface $client): void
     {
         try {
-            $now    = $this->ignoreException(function (): DateTimeImmutable {
+            $now = $this->ignoreException(function (): DateTimeImmutable {
                 return new DateTimeImmutable();
             });
             $schema = $this->getDatabaseSchema();
-            $this->updateResource($client->getIdentifier(), [
-                $schema->getClientsNameColumn()                   => $client->getName(),
-                $schema->getClientsDescriptionColumn()            => $client->getDescription(),
-                $schema->getClientsCredentialsColumn()            => $client->getCredentials(),
-                $schema->getClientsIsConfidentialColumn()         => $client->isConfidential(),
-                $schema->getClientsIsScopeExcessAllowedColumn()   => $client->isScopeExcessAllowed(),
-                $schema->getClientsIsUseDefaultScopeColumn()      => $client->isUseDefaultScopesOnEmptyRequest(),
-                $schema->getClientsIsCodeGrantEnabledColumn()     => $client->isCodeGrantEnabled(),
+            $this->updateResource($client->getIdentity(), [
+                $schema->getClientsNameColumn() => $client->getName(),
+                $schema->getClientsDescriptionColumn() => $client->getDescription(),
+                $schema->getClientsCredentialsColumn() => $client->getCredentials(),
+                $schema->getClientsIsConfidentialColumn() => $client->isConfidential(),
+                $schema->getClientsIsScopeExcessAllowedColumn() => $client->isScopeExcessAllowed(),
+                $schema->getClientsIsUseDefaultScopeColumn() => $client->isUseDefaultScopesOnEmptyRequest(),
+                $schema->getClientsIsCodeGrantEnabledColumn() => $client->isCodeGrantEnabled(),
                 $schema->getClientsIsImplicitGrantEnabledColumn() => $client->isImplicitGrantEnabled(),
                 $schema->getClientsIsPasswordGrantEnabledColumn() => $client->isPasswordGrantEnabled(),
-                $schema->getClientsIsClientGrantEnabledColumn()   => $client->isClientGrantEnabled(),
-                $schema->getClientsUpdatedAtColumn()              => $now,
+                $schema->getClientsIsClientGrantEnabledColumn() => $client->isClientGrantEnabled(),
+                $schema->getClientsUpdatedAtColumn() => $now,
             ]);
             $client->setUpdatedAt($now);
         } catch (RepositoryException $exception) {
@@ -242,13 +241,11 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
      */
-    public function delete(string $identifier): void
+    public function delete(string $index): void
     {
         try {
-            $this->deleteResource($identifier);
+            $this->deleteResource($index);
         } catch (RepositoryException $exception) {
             $message = 'Client deletion failed.';
             throw new RepositoryException($message, 0, $exception);
@@ -269,5 +266,58 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
     protected function getPrimaryKeyName(): string
     {
         return $this->getDatabaseSchema()->getClientsIdentityColumn();
+    }
+
+    /**
+     * @return string
+     */
+    protected function getIdentifierKeyName(): string
+    {
+        return $this->getDatabaseSchema()->getClientsIdentifierColumn();
+    }
+
+    /**
+     * @param int $identity
+     * @param iterable $scopeIdentities
+     * @return void
+     * @throws DBALDriverException
+     */
+    private function bindScopeIdentities(int $identity, iterable $scopeIdentities)
+    {
+        try {
+            $schema = $this->getDatabaseSchema();
+            $this->createBelongsToManyRelationship(
+                $identity,
+                $scopeIdentities,
+                $schema->getClientsScopesTable(),
+                $schema->getClientsScopesClientIdentityColumn(),
+                $schema->getClientsScopesScopeIdentityColumn()
+            );
+        } catch (RepositoryException $exception) {
+            $message = 'Binding client scope identities failed.';
+            throw new RepositoryException($message, 0, $exception);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function queryIdentity($index): ?int
+    {
+        if (($client = $this->read($index)) !== null) {
+            return $client->getIdentity();
+        }
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function queryIdentifier($index): ?string
+    {
+        if (($client = $this->read($index)) !== null) {
+            return $client->getIdentifier();
+        }
+        return null;
     }
 }

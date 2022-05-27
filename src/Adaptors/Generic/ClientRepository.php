@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace Whoa\Passport\Adaptors\Generic;
 
-use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Connection as DBALConnection;
 use Whoa\Passport\Contracts\Entities\ClientInterface;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Exceptions\RepositoryException;
@@ -34,26 +34,25 @@ class ClientRepository extends \Whoa\Passport\Repositories\ClientRepository
     /**
      * @var string
      */
-    private $modelClass;
+    private string $modelClass;
 
     /**
-     * @param Connection              $connection
+     * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $databaseSchema
-     * @param string                  $modelClass
+     * @param string $modelClass
      */
     public function __construct(
-        Connection $connection,
+        DBALConnection $connection,
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Client::class
-    )
-    {
+    ) {
+        parent::__construct(new ScopeRepository($connection, $databaseSchema));
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }
 
     /**
      * @inheritdoc
-     *
      * @throws RepositoryException
      */
     public function index(): array
@@ -70,17 +69,19 @@ class ClientRepository extends \Whoa\Passport\Repositories\ClientRepository
     /**
      * @inheritdoc
      */
-    public function read(string $identifier): ?ClientInterface
+    public function read($index): ?ClientInterface
     {
-        /** @var Client|null $client */
-        $client = parent::read($identifier);
+        /** @var Client|null $index */
+        $index = parent::read($index);
 
-        if ($client !== null) {
-            $this->addScopeAndRedirectUris($client);
+        if ($index !== null) {
+            $this->addScopeAndRedirectUris($index);
         }
 
-        return $client;
+        return $index;
     }
+
+
 
     /**
      * @inheritdoc
@@ -92,15 +93,13 @@ class ClientRepository extends \Whoa\Passport\Repositories\ClientRepository
 
     /**
      * @param Client $client
-     *
      * @return void
-     *
      * @throws RepositoryException
      */
     private function addScopeAndRedirectUris(Client $client): void
     {
-        $client->setScopeIdentifiers($this->readScopeIdentifiers($client->getIdentifier()));
-        $client->setRedirectUriStrings($this->readRedirectUriStrings($client->getIdentifier()));
+        $client->setScopeIdentifiers($this->readScopeIdentifiers($client));
+        $client->setRedirectUriStrings($this->readRedirectUriStrings((string)$client->getIdentity()));
     }
 
     /**
