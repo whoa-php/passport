@@ -129,10 +129,10 @@ interface TokenRepositoryInterface
     public function readScopeIdentifiers(int $identity): array;
 
     /**
-     * @param int $identifier
+     * @param int $identity
      * @return array
      */
-    public function readScopeColumns(int $identifier): array;
+    public function readScopeColumns(int $identity): array;
 
     /**
      * @param string $tokenValue

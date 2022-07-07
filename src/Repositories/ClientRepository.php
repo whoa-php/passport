@@ -172,7 +172,7 @@ abstract class ClientRepository extends BaseRepository implements ClientReposito
         try {
             assert($client !== null);
             $schema = $this->getDatabaseSchema();
-            $scopeIdentities = $this->readBelongsToManyRelationshipIdentifiers(
+            $scopeIdentities = $this->readBelongsToManyRelationshipIdentities(
                 $client instanceof ClientInterface ? $client->getIdentity() : $this->queryIdentity($client),
                 $schema->getClientsScopesTable(),
                 $schema->getClientsScopesClientIdentityColumn(),

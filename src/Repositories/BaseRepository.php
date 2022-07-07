@@ -343,27 +343,25 @@ abstract class BaseRepository
     }
 
     /**
-     * @param string|int $identifier
+     * @param string|int $identity
      * @param string $intTableName
      * @param string $intPrimaryKeyName
      * @param string $intForeignKeyName
      * @return string[]
      * @throws RepositoryException
      */
-    protected function readBelongsToManyRelationshipIdentifiers(
-        $identifier,
+    protected function readBelongsToManyRelationshipIdentities(
+        $identity,
         string $intTableName,
         string $intPrimaryKeyName,
         string $intForeignKeyName
     ): array {
         try {
-            $connection = $this->getConnection();
-            $query = $connection->createQueryBuilder();
-
+            $query = $this->getConnection()->createQueryBuilder();
             $query
                 ->select($intForeignKeyName)
                 ->from($intTableName)
-                ->where($intPrimaryKeyName . '=' . $this->createTypedParameter($query, $identifier));
+                ->where($intPrimaryKeyName . '=' . $this->createTypedParameter($query, $identity));
 
             $statement = $query->execute();
             $statement->setFetchMode(PDO::FETCH_NUM);
@@ -398,9 +396,7 @@ abstract class BaseRepository
         array $columns = ['*']
     ): array {
         try {
-            $connection = $this->getConnection();
-            $query = $connection->createQueryBuilder();
-
+            $query = $this->getConnection()->createQueryBuilder();
             $query
                 ->select($columns)
                 ->from($priTableName, $priTableAlias)

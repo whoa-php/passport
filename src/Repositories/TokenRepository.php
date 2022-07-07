@@ -333,7 +333,7 @@ abstract class TokenRepository extends BaseRepository implements TokenRepository
     {
         try {
             $schema = $this->getDatabaseSchema();
-            $scopeIdentities = $this->readBelongsToManyRelationshipIdentifiers(
+            $scopeIdentities = $this->readBelongsToManyRelationshipIdentities(
                 $identity,
                 $schema->getTokensScopesTable(),
                 $schema->getTokensScopesTokenIdentityColumn(),
@@ -354,15 +354,15 @@ abstract class TokenRepository extends BaseRepository implements TokenRepository
     /**
      * @inheritDoc
      */
-    public function readScopeColumns(int $identifier): array
+    public function readScopeColumns(int $identity): array
     {
         try {
             $schema = $this->getDatabaseSchema();
             $priTableAlias = 's';
             $intTableAlias = 'ts';
-            $columns = ["$priTableAlias.{$schema->getScopesNameColumn()}"];
+            $columns = ["$priTableAlias.{$schema->getScopesIdentifierColumn()}"];
             return $this->readBelongsToManyRelationshipColumns(
-                $identifier,
+                $identity,
                 $priTableAlias,
                 $intTableAlias,
                 $schema->getScopesTable(),
