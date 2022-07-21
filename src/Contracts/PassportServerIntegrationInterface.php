@@ -63,7 +63,6 @@ interface PassportServerIntegrationInterface
      * @param string $userName
      * @param string|null $password
      * @param mixed|null $extras
-     *
      * @return mixed
      */
     public function validateUserId(string $userName, ?string $password = null, $extras = null);
@@ -71,21 +70,18 @@ interface PassportServerIntegrationInterface
     /**
      * @param int $userIdentity
      * @param array|null $scope
-     *
      * @return array|null
      */
     public function verifyAllowedUserScope(int $userIdentity, array $scope = null): ?array;
 
     /**
      * @param TokenInterface $token
-     *
      * @return string
      */
     public function generateCodeValue(TokenInterface $token): string;
 
     /**
      * @param TokenInterface $token
-     *
      * @return array [string $tokenValue, string $tokenType, int $tokenExpiresInSeconds, string|null $refreshValue]
      */
     public function generateTokenValues(TokenInterface $token): array;
@@ -113,9 +109,7 @@ interface PassportServerIntegrationInterface
      * @param string[]|null $scopeList
      * @param string|null $state
      * @param array $extraParameters
-     *
      * @return ResponseInterface
-     *
      * @link https://tools.ietf.org/html/rfc6749#section-4.1.2
      * @link https://tools.ietf.org/html/rfc6749#section-4.2.2
      */
@@ -131,7 +125,6 @@ interface PassportServerIntegrationInterface
 
     /**
      * If token refresh value should be re-newed on token value re-new.
-     *
      * @return bool
      */
     public function isRenewRefreshValue(): bool;
@@ -144,7 +137,6 @@ interface PassportServerIntegrationInterface
     /**
      * @param ClientInterface $client
      * @param string $credentials
-     *
      * @return bool
      */
     public function verifyClientCredentials(ClientInterface $client, string $credentials): bool;
@@ -152,9 +144,7 @@ interface PassportServerIntegrationInterface
     /**
      * This method will be called before token is sent back to client. Developers can add custom
      * properties to the response by returning them from this method.
-     *
      * @param TokenInterface $token
-     *
      * @return array
      */
     public function getBodyTokenExtraParameters(TokenInterface $token): array;

@@ -30,7 +30,6 @@ trait ArrayParserTrait
 {
     /**
      * @param string $values
-     *
      * @return string[]
      */
     protected function parseArray(string $values): array

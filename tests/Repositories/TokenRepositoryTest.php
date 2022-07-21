@@ -221,7 +221,6 @@ class TokenRepositoryTest extends TestCase
 
     /**
      * Test create disabled token.
-     *
      * @throws Exception
      */
     public function testCreateDisabledToken()

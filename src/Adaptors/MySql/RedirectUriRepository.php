@@ -44,6 +44,7 @@ class RedirectUriRepository extends \Whoa\Passport\Repositories\RedirectUriRepos
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = RedirectUri::class
     ) {
+        parent::__construct(new ClientRepository($connection, $databaseSchema));
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }

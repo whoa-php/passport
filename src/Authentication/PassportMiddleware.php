@@ -51,7 +51,6 @@ class PassportMiddleware implements MiddlewareInterface
 
     /**
      * @inheritdoc
-     *
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
@@ -95,7 +94,6 @@ class PassportMiddleware implements MiddlewareInterface
 
     /**
      * @param ContainerInterface $container
-     *
      * @return ResponseInterface
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
@@ -114,7 +112,6 @@ class PassportMiddleware implements MiddlewareInterface
 
     /**
      * @param ContainerInterface $container
-     *
      * @return null|LoggerInterface
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface

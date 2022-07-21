@@ -31,42 +31,36 @@ interface RedirectUriRepositoryInterface
 {
     /**
      * @param Closure $closure
-     *
      * @return void
      */
     public function inTransaction(Closure $closure): void;
 
     /**
      * @param string $clientIdentifier
-     *
      * @return RedirectUriInterface[]
      */
     public function indexClientUris(string $clientIdentifier): array;
 
     /**
      * @param RedirectUriInterface $redirectUri
-     *
      * @return RedirectUriInterface
      */
     public function create(RedirectUriInterface $redirectUri): RedirectUriInterface;
 
     /**
      * @param int $identity
-     *
      * @return RedirectUriInterface|null
      */
     public function read(int $identity): ?RedirectUriInterface;
 
     /**
      * @param RedirectUriInterface $redirectUri
-     *
      * @return void
      */
     public function update(RedirectUriInterface $redirectUri): void;
 
     /**
      * @param int $identifier
-     *
      * @return void
      */
     public function delete(int $identifier): void;

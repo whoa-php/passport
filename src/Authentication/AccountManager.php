@@ -88,7 +88,6 @@ class AccountManager implements PassportAccountManagerInterface
 
     /**
      * @inheritdoc
-     *
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */

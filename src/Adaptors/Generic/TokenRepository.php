@@ -230,7 +230,6 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
     /**
      * @param string $tokenValue
      * @param int $expirationInSeconds
-     *
      * @return QueryBuilder
      */
     private function createPassportDataQuery(

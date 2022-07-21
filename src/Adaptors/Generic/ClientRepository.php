@@ -82,7 +82,6 @@ class ClientRepository extends \Whoa\Passport\Repositories\ClientRepository
     }
 
 
-
     /**
      * @inheritdoc
      */

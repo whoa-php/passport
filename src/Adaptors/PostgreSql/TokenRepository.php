@@ -49,17 +49,19 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Token::class
     ) {
+        parent::__construct(
+            new ClientRepository($connection, $databaseSchema),
+            new ScopeRepository($connection, $databaseSchema)
+        );
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }
 
     /**
      * @inheritdoc
-     *
      * @param string $tokenValue
      * @param int $expirationInSeconds
      * @return array|null
-     * @throws DBALException
      */
     public function readPassport(string $tokenValue, int $expirationInSeconds): ?array
     {

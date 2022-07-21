@@ -189,7 +189,6 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
 
     /**
      * @inheritdoc
-     *
      * @throws Exception
      */
     public function generateCodeValue(TokenInterface $token): string
@@ -203,7 +202,6 @@ abstract class BasePassportServerIntegration implements PassportServerIntegratio
 
     /**
      * @inheritdoc
-     *
      * @throws Exception
      */
     public function generateTokenValues(TokenInterface $token): array

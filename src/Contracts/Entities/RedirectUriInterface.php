@@ -37,7 +37,6 @@ interface RedirectUriInterface
 
     /**
      * @param int $identity
-     *
      * @return RedirectUriInterface
      */
     public function setIdentity(int $identity): RedirectUriInterface;
@@ -49,7 +48,6 @@ interface RedirectUriInterface
 
     /**
      * @param UuidInterface|string|null $uuid
-     *
      * @return RedirectUriInterface
      */
     public function setUuid($uuid = null): RedirectUriInterface;
@@ -72,7 +70,6 @@ interface RedirectUriInterface
 
     /**
      * @param string $identifier
-     *
      * @return RedirectUriInterface
      */
     public function setClientIdentifier(string $identifier): RedirectUriInterface;
@@ -89,7 +86,6 @@ interface RedirectUriInterface
 
     /**
      * @param string $uri
-     *
      * @return RedirectUriInterface
      */
     public function setValue(string $uri): RedirectUriInterface;
@@ -101,7 +97,6 @@ interface RedirectUriInterface
 
     /**
      * @param DateTimeInterface $createdAt
-     *
      * @return RedirectUriInterface
      */
     public function setCreatedAt(DateTimeInterface $createdAt): RedirectUriInterface;
@@ -113,7 +108,6 @@ interface RedirectUriInterface
 
     /**
      * @param DateTimeInterface $createdAt
-     *
      * @return RedirectUriInterface
      */
     public function setUpdatedAt(DateTimeInterface $createdAt): RedirectUriInterface;

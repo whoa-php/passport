@@ -39,7 +39,6 @@ trait DatabaseSchemaMigrationTrait
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
      *
@@ -107,7 +106,6 @@ trait DatabaseSchemaMigrationTrait
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
      *
@@ -129,7 +127,7 @@ trait DatabaseSchemaMigrationTrait
 CREATE OR REPLACE VIEW {$view} AS
     SELECT
       t.*,
-      GROUP_CONCAT(DISTINCT s.{$scopesScopeIdentifier} ORDER BY s.{$scopesScopeIdentifier} ASC SEPARATOR ' ') AS {$scopesColumn}
+q      GROUP_CONCAT(DISTINCT s.{$scopesScopeIdentifier} ORDER BY s.{$scopesScopeIdentifier} ASC SEPARATOR ' ') AS {$scopesColumn}
     FROM {$tokens} AS t
       LEFT JOIN {$intermediate} AS ts ON t.{$tokensTokenId} = ts.{$intermediateTokenId}
       LEFT JOIN {$scopes} AS s ON ts.{$intermediateScopeId} = s.{$scopesScopeId}

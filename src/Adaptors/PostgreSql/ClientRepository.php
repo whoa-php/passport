@@ -44,6 +44,7 @@ class ClientRepository extends \Whoa\Passport\Repositories\ClientRepository
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Client::class
     ) {
+        parent::__construct(new ScopeRepository($connection, $databaseSchema));
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }

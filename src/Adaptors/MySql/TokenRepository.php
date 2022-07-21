@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace Whoa\Passport\Adaptors\MySql;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use Whoa\Passport\Contracts\Entities\DatabaseSchemaInterface;
 use Whoa\Passport\Exceptions\RepositoryException;
 use PDO;
@@ -49,14 +49,19 @@ class TokenRepository extends \Whoa\Passport\Repositories\TokenRepository
         DatabaseSchemaInterface $databaseSchema,
         string $modelClass = Token::class
     ) {
+        parent::__construct(
+            new ClientRepository($connection, $databaseSchema),
+            new ScopeRepository($connection, $databaseSchema)
+        );
         $this->setConnection($connection)->setDatabaseSchema($databaseSchema);
         $this->modelClass = $modelClass;
     }
 
     /**
      * @inheritdoc
-     *
-     * @throws RepositoryException
+     * @param string $tokenValue
+     * @param int $expirationInSeconds
+     * @return array|null
      */
     public function readPassport(string $tokenValue, int $expirationInSeconds): ?array
     {

@@ -602,7 +602,6 @@ abstract class Client extends DatabaseItem implements Entity
 
     /**
      * @param string $value
-     *
      * @return Client
      */
     protected function parseIsCodeAuthEnabled(string $value): Client

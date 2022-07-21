@@ -39,7 +39,6 @@ trait DatabaseSchemaMigrationTrait
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
      *
@@ -61,9 +60,7 @@ trait DatabaseSchemaMigrationTrait
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
-     *
      * @throws DBALException
      */
     protected function removeDatabaseSchema(DBALConnection $connection, DatabaseSchemaInterface $schema): void
@@ -75,9 +72,7 @@ trait DatabaseSchemaMigrationTrait
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
-     *
      * @throws DBALException
      */
     protected function createDatabaseViews(DBALConnection $connection, DatabaseSchemaInterface $schema): void
@@ -91,9 +86,7 @@ trait DatabaseSchemaMigrationTrait
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
-     *
      * @throws DBALException
      */
     protected function removeDatabaseViews(DBALConnection $connection, DatabaseSchemaInterface $schema): void
@@ -107,10 +100,8 @@ trait DatabaseSchemaMigrationTrait
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function createTokensView(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
@@ -137,10 +128,8 @@ EOT;
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function removeTokensView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
@@ -152,10 +141,8 @@ EOT;
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function createPassportView(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
@@ -176,10 +163,8 @@ EOT;
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function removePassportView(DBALConnection $connection, DatabaseSchemaInterface $schema): void
     {
@@ -191,10 +176,8 @@ EOT;
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function createClientsView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
@@ -226,10 +209,8 @@ EOT;
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function removeClientsView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
@@ -241,10 +222,8 @@ EOT;
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function createUsersView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
@@ -274,10 +253,8 @@ EOT;
     /**
      * @param DBALConnection $connection
      * @param DatabaseSchemaInterface $schema
-     *
      * @return void
      * @throws DBALException
-     *
      */
     private function removeUsersView(DBALConnection $connection, DatabaseSchemaInterface $schema)
     {
